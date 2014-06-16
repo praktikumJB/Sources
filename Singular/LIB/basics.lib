@@ -8,6 +8,11 @@ AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
 
 OVERVIEW:
 
+This library contains elementary functions that should be in the kernel,
+hence should be empty.
+
+At the moment it contains:
+
 Some useful basic functions from combinatorics.
 
 KEYWORDS:

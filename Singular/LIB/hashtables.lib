@@ -27,7 +27,7 @@ addHashTables                 add two HashTables, can also be used by +
 
 ";
 
-LIB "/mnt/hgfs/code/basics.lib";
+LIB "basics.lib";
 
 proc mod_init()
 {

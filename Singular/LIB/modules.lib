@@ -36,7 +36,7 @@ proc zero(int n,int m)
 
 proc mod_init()
 {
-LIB "/mnt/hgfs/code/nets.lib";
+LIB "nets.lib";
 newstruct("Module","matrix generators,matrix relations,ring over");
 newstruct("Homomorphism","Module target,Module source,matrix rule");
 
@@ -46,8 +46,8 @@ system("install","Module","+",addModules,2);
 system("install","Module","==",compareModules,2);
 
 Method netM = method(list("Module"),"netModule");
-net_=net_+netM;
-installMethod(net_,"net");
+Nets::net_=Nets::net_+netM;
+installMethod(Nets::net_,"net");
 
 HashTable kerH = hashTable(list(list("matrix"),list("Homomorphism")),list("kerMat","kerHom"));
 Method ker_ = method(kerH);

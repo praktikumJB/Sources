@@ -42,7 +42,6 @@ system("install","Net","+",catNets,2);
 HashTable F = hashTable(list(list("ring"),list("matrix"),list("int"),list("string")),list("netRing","netMatrix","netInt","netString"));
 Method net_ = method(F);
 export(net_); 
-//export for newstructs is broken in Singular at the moment, so net_ is not available outside of the library, however net works
 installMethod(net_,"net");
 }
 
