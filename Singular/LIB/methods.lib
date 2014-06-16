@@ -1,0 +1,135 @@
+///////////////////////////////////////////////////////////////////////////////
+version="$Id$";
+category="Miscellaneous";
+info="
+LIBRARY:  methods.lib    installing methods in Singular
+
+AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
+
+OVERVIEW:
+
+Methods select the function to execute by the types of the input tuple.
+The key function is installMethod, which takes a list of lists of input types
+and a list of function names.
+
+Caveat: Does not work at the moment if the argument is a list,
+        since Singular cannot distinguish, e.g., the two calls f(1,2) and f(list(1,2)).
+
+TYPES:
+Method                the class of all methods
+
+KEYWORDS:
+methods     
+
+
+PROCEDURES:
+
+installMethod                  install a method
+method                         make a method
+
+";
+
+
+
+proc mod_init()
+{
+LIB "hashtables.lib";
+newstruct("Method","HashTable functionClosures");
+
+system("install","Method","print",printMethod,1);
+system("install","Method","+",addMethods,2);
+}
+
+
+
+proc method(def #)
+{
+  Method M;
+  if (typeof(#)=="HashTable"){
+    M.functionClosures = #;
+  } else
+  {
+    HashTable H;
+    H.keys=list(#[1]);
+    H.values=list(#[2]);
+    M.functionClosures = H;
+  }
+return(M);}
+
+proc printMethod(Method f)
+{
+print(f.functionClosures);
+}
+
+
+
+proc addMethods(Method f, Method g)
+{
+  Method M;
+  M.functionClosures = (f.functionClosures)+(g.functionClosures);
+return(M);}
+
+proc compareLists(list L1, list L2)
+{
+  if (size(L1)!=size(L2)){return(0);}
+  for (int i=1; i<=size(L1); i++){
+    if (L1[i]!=L2[i]){return(0);}
+  }
+return(1);}
+
+
+
+proc installMethod(Method M,string fname)
+{
+  HashTable H = M.functionClosures;
+  //string fname = nameof(M);
+  //fname=fname[1..size(fname)-1];
+  string s = "proc "+fname+"(list #) {";
+  string ff;
+  s=s+"list tlist = apply(#,typeof);";
+  list v = H.values;
+  list k = H.keys;
+  string ki;
+  int i,j,l;
+  for (i=1; i<=size(H); i++){
+    ff = v[i];
+    ki="";
+    for (j=1; j<size(k[i]); j++){
+      ki=ki+"\""+k[i][j]+"\",";
+    }
+    ki=ki+"\""+k[i][size(k[i])]+"\"";
+    s=s+"if (compareLists(tlist,list("+ki+"))){return("+ff+"(";
+    for (l=1; l<size(k[i]); l++){
+      s=s+"#["+string(l)+"],";
+    }
+    s=s+"#["+string(size(k[i]))+"]";
+    s=s+"));};";
+  };
+  s=s+"ERROR(\"No method found\");}";
+intvec o=option(get);
+option(noredefine);
+execute(s);
+execute("exportto(Top,"+fname+");");
+option(set,o);
+};
+example
+{ "EXAMPLE:"; echo=2;
+proc square(int i){return(i^2);};
+Method m1 = method(list("int"),"square");
+installMethod(m1,"tst");
+tst(2);
+Method m2=method(list("ideal","int"),"kbase");
+Method m=m1+m2;
+installMethod(m,"tst");
+ring R=0,(x,y),dp;
+ideal I = x^3,y^7;
+I=std(I);
+tst(I,2);
+HashTable F = hashTable(list(list("int"),list("ideal","int")),list("square","kbase"));
+Method m = method(F);
+installMethod(m,"tst");
+}
+
+
+
+
