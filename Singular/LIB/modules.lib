@@ -128,23 +128,23 @@ matrix rels = M.relations;
 matrix gens = M.generators;
 int zerorel=isZero(rels);
 int idgens=isIdentity(gens);
-Net ret;
+Net ret,ret2;
 if (zerorel) {
    if (idgens){
      ret=net(nameOver(M))+net("^")+net(nrows(gens));
-     ret2=ret2+net(", free");
+     ret2=net(", free");
    } else {
      ret=net("image ")+net(gens);
-     ret2=ret2+net(", submodule of ")+netModule(free(nrows(gens)),"short");
+     ret2=net(", submodule of ")+netModule(free(nrows(gens)),"short");
    }
 }
 if ((!zerorel)&&idgens) {
    ret=net("cokernel ")+net(rels);
-   ret2=ret2+net(", quotient of ")+netModule(free(nrows(rels)),"short");
+   ret2=net(", quotient of ")+netModule(free(nrows(rels)),"short");
 }
 if ((!idgens)&&(!zerorel)) {
    ret=net("subquotient (")+net(gens)+net(", ")+net(rels)+net(")");
-   ret2=ret2+net(", subquotient of ")+netModule(free(nrows(rels)),"short");
+   ret2=net(", subquotient of ")+netModule(free(nrows(rels)),"short");
 }
 setring(R);
 return(ret);}
