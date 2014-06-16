@@ -87,8 +87,12 @@ M.over = basering;
 return(M);
 }
 
-proc free(int n){
-return(image(id(n)));
+proc free(def S,int n){
+def R=basering;
+setring S;
+Modules M = image(id(n));
+setring R;
+return(M);
 }
 
 
@@ -135,16 +139,16 @@ if (zerorel) {
      ret2=net(", free");
    } else {
      ret=net("image ")+net(gens);
-     ret2=net(", submodule of ")+netModule(free(nrows(gens)),"short");
+     ret2=net(", submodule of ")+netModule(free(M.over,nrows(gens)),"short");
    }
 }
 if ((!zerorel)&&idgens) {
    ret=net("cokernel ")+net(rels);
-   ret2=net(", quotient of ")+netModule(free(nrows(rels)),"short");
+   ret2=net(", quotient of ")+netModule(free(M.over,nrows(rels)),"short");
 }
 if ((!idgens)&&(!zerorel)) {
    ret=net("subquotient (")+net(gens)+net(", ")+net(rels)+net(")");
-   ret2=net(", subquotient of ")+netModule(free(nrows(rels)),"short");
+   ret2=net(", subquotient of ")+netModule(free(M.over,nrows(rels)),"short");
 }
 setring(R);
 return(ret);}
