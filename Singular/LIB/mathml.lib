@@ -60,30 +60,81 @@ proc mathmlInt(matrix m){}
 
 proc mathmlString(matrix m){}
 
+proc LeadCoef(string s) {
+string t;
+int i=1;
+int u=0;
+ while (i<size(s)) {
+   if (s[i]=="/")  {u=1;
+                    i=size(s);} 
+   i=i+1;
+  }
+i=1;
+if (u==1) {
+   if (s[1]=="-") {
+   t="<mo>-</mo>";
+   i=2;}
+   t=t+"<mfrac> <mn>";
+ while (i<=size(s)) {
+    if (s[i]=="/") {t=t+"</mn> <mn>";} 
+    else           {t=t+s[i];}
+    i=i+1;
+    }
+   t=t+"</mn> </mfrac>";
+  }
+if (u==0) {t="<mn>"+s+"</mn>";}
+return(t);
+} 
+  
+
 proc mathmlPoly(poly m){
 string s;
 poly d=m;
+int u;
 int k;
 int j;
 s="<math xmlns=http://www.w3.org/1998/Math/MathML>";
+if (leadcoef(d)!=-1 && leadcoef(d)!=1) {
+s=s+LeadCoef(string(leadcoef(d)));}
+if (leadcoef(d)==-1) {s=s+"<mo>-</mo>";}
  while (d!=0)  {
  j=1;
  k=1;
- while (j<=size(leadexp(d)) {
+ while (j<=size(leadexp(d))) {
   if (leadexp(d)[j]>0)  {
-  s=s+"<msup><mi>"+string(variables(lead(d))[k])+"</mi><mn>"+string(leadexp(d)[j]
-)+"</mn></msup>";
+   if (leadexp(d)[j]==1)  {
+           s=s+"<mi>"+string(variables(lead(d))[k])+"</mi>";
+           k=k+1;}
+  else 
+  {s=s+"<msup><mi>"+string(variables(lead(d))[k])+"</mi><mn>"+string(leadexp(d)[j])+"</mn></msup>";
     k=k+1;
     }  
+  }
  j=j+1;
  }
  d=d-lead(d);
+ if (d!=0) {
+   if (leadcoef(d)<0) {s=s+"<mo>-</mo>";u=-1;}
+   if (leadcoef(d)>0) {s=s+"<mo>+</mo>";u=1;}
+  if ((leadcoef(d)*u)!=1) {s=s+LeadCoef(string(leadcoef(d)*u));}
+  }
  }
 s=s+"</math>";
 return(s);
 }
 
 
-proc mathmlRing(matrix m){}
+proc mathmlRing(def r){
+int i=0;
+string t;
+string s="";
+if (find(string(r),")")<=3)  {
+  s="<mi> Q [";
+  t=string(r)[find(string(r),")")+3,size(string(r))];
+  s=s+t[1,find(t,")")-1];
+  s=s+"] </mi>";
+ }
+return(s);
+}
 
 // usw

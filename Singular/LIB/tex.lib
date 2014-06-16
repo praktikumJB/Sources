@@ -113,14 +113,36 @@ proc texPoly(poly p){
 	int j;
 	int k;
 	int b = 0;//const monomial = 1
+	int m = 1;
 	for(int i=1;i<=size(p);i++){//for every monomial
 		b =  1;
-		if(leadcoef(P) != 1 && leadcoef(P)!=-1){
-			if(leadcoef(P)>0){
-				S = S + string(leadcoef(P));
+		if(leadcoef(P) == -1 && m==1){S=S+"-";}
+		if((leadcoef(P) != 1 && leadcoef(P)!=-1)){
+			if(m == 1 && leadcoef(P)<0){
+				S = S +"-";
+				m = 0;
+			}
+			string s = string(leadcoef(P));
+			if(find(s,"/")==0){
+				if(leadcoef(P)>0){
+					S = S + string(leadcoef(P));
+				}
+				else{
+					S = S+ string(-1*leadcoef(P));
+				}
 			}
 			else{
-				S = S+ string(-1*leadcoef(P));
+				if(leadcoef(P)>0){
+					
+					S = S + "\\frac{"+string(leadcoef(P))[1,find(s,"/")-1]+"}";
+					S = S + "{" + string(leadcoef(P))[find(s,"/")+1,size(string(leadcoef(P)))-find(s,"/")]+"}";
+				}
+				else{
+					s = string((-1)*leadcoef(P));
+					print(s);
+					S = S + "\\frac{"+string((-1)*leadcoef(P))[1,find(s,"/")-1]+"}";
+					S = S + "{" + string((-1)*leadcoef(P))[find(s,"/")+1,size(string(leadcoef(P)))-find(s,"/")-1]+"}";
+				}	
 			}
 		}
 		d = lead(P);
@@ -131,7 +153,7 @@ proc texPoly(poly p){
 		
 			if(v[j]!=0){//Variable kommt vor
 				if(v[j]==1){
-					S = S+l[k]+"^{}";//empty brackets are needed because of lateX "bug" with $$, at least in the tested compilers
+					S = S+l[k]+"^{}";
 					k = k+1;
 					
 				}
@@ -236,7 +258,7 @@ return("Syntax korrekt. Semantik manuell prüfen.");
 }
 
 proc texRing(def r){
-	print("HIND: lateX package \"amssymb\" is required.");
+	print("HINT: lateX package \"amssymb\" is required.");
 	
 	list l 	= ringlist(r);	//Eigenschaften des Rings...
 	int i;			//Zählervariablen
@@ -280,39 +302,7 @@ proc texRing(def r){
 	}
 	
 	
-	//hunt for localisation
-	int blocal = 0;
-	int blocal1 = 0;
-	int blocal2 = 0;
-	int i_local = 0;
-	int posi_local;
-	int c_local = 1; //counter
-	list l_local;
-	string s_l;
-	if(typeof(l[3])!="none"){
-		if(typeof(l[3])=="list"){
-			for(i=1;i<=size(l[3]);i++){
-				s_l = l[3][i][1];
-				if(s_l =="ds" || s_l =="Ds" || s_l == "Ws"|| s_l == "ws" || s_l == "ls"){
-					blocal1 = 1; 
-					s_l = string(l[3][i][2]);
-					while(42==42){
-						if(find(s_l,",")!=0){
-							c_local = c_local + 1;
-							s_l = s_l[find(s_l,",")+1,size(s_l)];	
-						}
-						else{break;}
-					}
-					posi_local = i;
-				}
-				if(s_l =="lp"||s_l=="rp"||s_l=="dp"||s_l=="Dp"||s_l=="wp"||s_l=="Wp"){
-					blocal2 = 1;
-				}
-				if(blocal2 == 1 && blocal1 == 1){blocal=1;}
-		
-			}
-		}
-	}
+	
 	
 
 
@@ -368,47 +358,12 @@ proc texRing(def r){
 	V = V + "]";
 	
 	
-	//aufbau abhängig von localisierung
-	string P2;
-	if(blocal ==1){
-		print("WARNING: localisations are still semi-total-buggy!!! :(");
-		P2="("+C+"[";
-		
-		if(posi_local ==2){
-		
-			for(i=1;i<c_local;i++){
-				
-				P2 = P2  + texRingVariablesEncoding(string(l[2][i]))+",";
-			}
-			P2 = P2 +texRingVariablesEncoding(string(l[2][c_local]))+"])[";
-			
-			for(i=c_local+1;i<size(l[2]);i++){
-				P2 = P2 + texRingVariablesEncoding(string(l[2][i]))+",";
-			}
-			P2 = P2 + texRingVariablesEncoding(string(l[2][size(l[2])]))+"]";
-		}	
-		if(posi_local ==1){
-			print(size(l[3]));
-			print(size(l[3])-c_local);
-			print(c_local);
-			for(i=(t-c_local+1);i<size(l[3]);i++){
-				P2 = P2  + texRingVariablesEncoding(string(l[2][c_local+i]))+",";
-			}
-			P2 = P2 +texRingVariablesEncoding(string(l[2][size(l[2])]))+"])[";
-			for(i=1;i<c_local;i++){
-				P2 = P2 + texRingVariablesEncoding(string(l[2][i]))+",";
-			}
-			P2 = P2 + texRingVariablesEncoding(string(l[2][c_local]))+"]";
-
-
-		}
-		S = P2;
-	}
+	
+	
 	//epic conclusion
-	if(blocal ==0){
 	if(size(P)!=0){S=S+C+V+S2+C + "="+P;}
 	else{S=S+C+V;}
-	}
+	
 	S = S +"$";
 return(S);
 }
@@ -430,5 +385,41 @@ proc texRingVariablesEncoding(string s){
 
 return(S);
 }
+
+proc texMakePDF(string s){return(texMakeFile(s,"pdf"));}
+proc texMakeDVI(string s){return(texMakeFile(s,"dvi"));}
+proc texMakeFile(string s, string m){
+	/*
+	@s: string, which will be compiled
+	@#: choice whether dvi//pdf
+	*/
+	string Sstart 	= "\\documentclass[a4paper,10pt]{article} \\author{SingularAlgebraSystem} \\usepackage{amssymb} \\begin{document} ";
+	string Send	= " \\end{document}";
+	string S = Sstart + s + Send;	
+	write(":w /tmp/singular_latex", S);
+	int b = 0;
+	
+	if(m == "dvi"){
+		b = 1;
+		
+		system("sh","latex /tmp/singular_latex");
+	}
+	if(m=="pdf"){
+		b = 1;
+		system("sh","pdflatex /tmp/singular_latex");
+	}
+	
+	return("tex-file has been created.");
+}
+proc texViewPDF(){return(texViewFile("pdf"));}
+proc texViewDVI(){return(texViewFile("dvi"));}
+proc texViewFile(string m){
+	if(m == "pdf"){return(system("sh","kpdf /tmp/singular_latex.tex"));}
+	if(m == "dvi"){return(system("sh","kdvi /tmp/singular_latex.tex"));}
+}
+
+
+
+
 
 // usw
