@@ -90,7 +90,7 @@ return(M);
 proc free(def S,int n){
 def R=basering;
 setring S;
-Modules M = image(id(n));
+Module M = image(id(n));
 setring R;
 return(M);
 }
