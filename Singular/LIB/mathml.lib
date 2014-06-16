@@ -1,0 +1,89 @@
+///////////////////////////////////////////////////////////////////////////////
+version="$Id$";
+category="Miscellaneous";
+info="
+LIBRARY:  mathml.lib    printing latex code
+
+AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
+          M. Mueller, mkmuelle @ mathematik.uni-kl.de
+          H. Rombach, HRombach @ gmx.de
+          M. Stein, maxstein77 @ web.de
+
+OVERVIEW:
+
+mathml conversion
+
+KEYWORDS:
+mathml
+
+
+
+PROCEDURES:
+mathml(def)                general procedure to generate a mathml code from a Singular object
+viewMathml(string)         view mathml code
+";
+
+LIB "matrix.lib";
+
+
+
+proc mod_init()
+{
+LIB "methods.lib";
+HashTable F = hashTable(list(list("ring"),list("matrix"),list("int"),list("string")),list("mathmlRing","mathmlMatrix","mathmlInt","mathmlString"));
+Method mathml_ = method(F);
+export(mathml_); 
+// export is broken in Singular at the moment, does not work for newstructs, so mathml_ is not available, however the function tex works
+installMethod(mathml_,"tex");
+}
+
+
+proc mathmlMatrix(matrix m){
+ string s;
+ int i=1;
+ int j=1;
+ s=s+"<math xmlns=http://www.w3.org/1998/Math/MathML><!doctype html> <mfenced open=[ close=]> <mtable>";
+  while (i<=nrows(m)) {
+   j=1;
+    s=s+"<mtr>";
+    while (j<=ncols(m)) {
+      s=s+"<mtd> <mi>"+string(m[i,j])+"</mi></mtd>";
+      j=j+1;
+     }
+     s=s+"</mtr>";
+    i=i+1;
+  }
+return(s);
+}
+
+proc mathmlInt(matrix m){}
+
+proc mathmlString(matrix m){}
+
+proc mathmlPoly(poly m){
+string s;
+poly d=m;
+int k;
+int j;
+s="<math xmlns=http://www.w3.org/1998/Math/MathML>";
+ while (d!=0)  {
+ j=1;
+ k=1;
+ while (j<=size(leadexp(d)) {
+  if (leadexp(d)[j]>0)  {
+  s=s+"<msup><mi>"+string(variables(lead(d))[k])+"</mi><mn>"+string(leadexp(d)[j]
+)+"</mn></msup>";
+    k=k+1;
+    }  
+ j=j+1;
+ }
+ d=d-lead(d);
+ }
+s=s+"</math>";
+return(s);
+}
+
+
+proc mathmlRing(matrix m){}
+
+// usw

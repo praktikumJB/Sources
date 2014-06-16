@@ -1,0 +1,95 @@
+///////////////////////////////////////////////////////////////////////////////
+version="$Id$";
+category="Miscellaneous";
+info="
+LIBRARY:  hashtables.lib    lists with arbitrary index sets
+
+AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
+
+OVERVIEW:
+
+HashTables are lists with arbitrary index sets.
+
+
+KEYWORDS:
+hash table
+
+
+TYPES:
+HashTable                     The class of all hash tables
+
+PROCEDURES:
+
+hashTable                     make a HashTable
+printHashTable                print a HashTable, can also be used by print
+selectKey                     select a key in a HashTable, can also be used by *
+addHashTables                 add two HashTables, can also be used by +
+
+";
+
+LIB "/mnt/hgfs/code/basics.lib";
+
+proc mod_init()
+{
+newstruct("HashTable","list keys, list values");
+system("install","HashTable","print",printHashTable,1);
+system("install","HashTable","size",sizeHashTable,1);
+system("install","HashTable","*",selectKey,2);
+system("install","HashTable","+",addHashTables,2);
+
+}
+
+proc hashTable(list k, list v)
+{
+  HashTable H;
+  H.keys = k;
+  H.values = v;
+return(H);}
+
+proc printHashTable(HashTable H){
+  for (int j=1; j<=size(H); j++)
+  {
+    print(string((H.keys)[j])+" => "+string((H.values)[j]));
+  }
+};
+
+proc sizeHashTable(HashTable H){
+return(size(H.keys));}
+
+
+proc selectKey(HashTable H, def k){
+for (int j=1; j<=size(H); j++)
+  {
+    if ((H.keys)[j]==k){return((H.values)[j]);}
+  }
+ERROR("key not found");}
+
+proc addHashTables(HashTable H, HashTable W)
+"
+"
+{
+HashTable D;
+//if (size(intersectLists(H.keys,W.keys))) {ERROR("key sets not disjoint");}
+D.keys = (H.keys)+(W.keys);
+D.values = (H.values)+(W.values);
+return(D);
+}
+example
+{ "EXAMPLE:"; echo=2;
+HashTable H = hashTable(list("a","b","c"),list("aa","bb","cc"));
+selectKey(H,"b");
+selectKey(H,"d");
+H+H;
+HashTable W = hashTable(list("d","e","f"),list("aa","bb","cc"));
+H+W;
+}
+
+
+
+proc tally(list L){
+HashTable H;
+return(H);}
+
+
+
+

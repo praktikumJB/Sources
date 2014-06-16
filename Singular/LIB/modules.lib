@@ -1,0 +1,279 @@
+///////////////////////////////////////////////////////////////////////////////
+version="$Id$";
+category="Commutative Algebra";
+info="
+LIBRARY:  modules.lib    Modules
+
+AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
+
+OVERVIEW:
+
+KEYWORDS:
+
+TYPES:
+
+PROCEDURES:
+
+";
+
+
+LIB "matrix.lib";
+LIB "homolog.lib";
+// concat
+
+proc id(int n)
+{
+  matrix E[n][n];
+  E=E+1;
+  return(E);
+}
+
+proc zero(int n,int m)
+{
+  matrix E[n][m];
+  return(E);
+}
+
+proc mod_init()
+{
+LIB "/mnt/hgfs/code/nets.lib";
+newstruct("Module","matrix generators,matrix relations,ring over");
+newstruct("Homomorphism","Module target,Module source,matrix rule");
+
+system("install","Module","print",printModule,1);
+system("install","Homomorphism","print",printHom,1);
+system("install","Module","+",addModules,2);
+system("install","Module","==",compareModules,2);
+
+Method netM = method(list("Module"),"netModule");
+net_=net_+netM;
+installMethod(net_,"net");
+
+HashTable kerH = hashTable(list(list("matrix"),list("Homomorphism")),list("kerMat","kerHom"));
+Method ker_ = method(kerH);
+export(ker_);
+installMethod(ker_,"ker");
+
+}
+
+
+proc subquotient(matrix gens, matrix rels)
+{
+Module M;
+M.generators = gens;
+M.relations = rels;
+M.over = basering;
+return(M);
+}
+
+
+proc coker(matrix rels)
+{
+Module M;
+int n = nrows(rels);
+M.generators = id(n);
+M.relations = rels;
+M.over = basering;
+return(M);
+}
+
+proc image(matrix gens)
+{
+Module M;
+M.generators = gens;
+int n = ncols(gens);
+M.relations = zero(n,1);
+M.over = basering;
+return(M);
+}
+
+proc free(int n){
+return(image(id(n)));
+}
+
+
+proc kerMat(matrix mat)
+{
+return(image(syz(mat)));
+}
+
+proc isZero(matrix M)
+{
+int n=nrows(M);
+int m=ncols(M);
+matrix Z=zero(n,m);
+return(M==Z);
+}
+
+proc isIdentity(matrix M)
+{
+int n=ncols(M);
+matrix Z=id(n);
+return(M==Z);
+}
+
+
+proc nameOver(Module M){
+def R= basering;
+setring(M.over);
+string n = nameof(basering);
+setring R;
+return(n);}
+
+proc netModule(Module M)
+{
+def R=basering;
+setring(M.over);
+matrix rels = M.relations;
+matrix gens = M.generators;
+int zerorel=isZero(rels);
+int idgens=isIdentity(gens);
+Net ret;
+if (zerorel) {
+   if (idgens){
+     ret=net(nameOver(M))+net("^")+net(nrows(gens));
+     ret2=ret2+net(", free");
+   } else {
+     ret=net("image ")+net(gens);
+     ret2=ret2+net(", submodule of ")+netModule(free(nrows(gens)),"short");
+   }
+}
+if ((!zerorel)&&idgens) {
+   ret=net("cokernel ")+net(rels);
+   ret2=ret2+net(", quotient of ")+netModule(free(nrows(rels)),"short");
+}
+if ((!idgens)&&(!zerorel)) {
+   ret=net("subquotient (")+net(gens)+net(", ")+net(rels)+net(")");
+   ret2=ret2+net(", subquotient of ")+netModule(free(nrows(rels)),"short");
+}
+setring(R);
+return(ret);}
+
+
+
+proc printModule(Module M){
+Net ret = net(M);
+Net ret2 = net(nameOver(M))+net("-module");
+ret=stackNets(ret,ret2);
+print(ret);}
+
+proc present(Module M)
+{
+  def R=basering;
+  setring(M.over);
+  int n=ncols(M.generators);
+  matrix MM;
+  if (isZero(M.relations)){
+     MM=M.generators;
+  } else {
+     MM=concat(M.generators,M.relations);
+  }
+  matrix K = syz(MM);
+  K=submat(K,1..n, 1..ncols(K));
+  Module cc = coker(K);
+  setring R;
+  return(cc);
+}
+
+
+proc minimize(Module M)
+{
+  def R=basering;
+  setring(M.over);
+  Module MM = present(M);
+  module Mold = MM.relations;
+  matrix gM = prune(Mold);
+  Module cc=coker(gM);
+  setring R;
+  return(cc);
+}
+
+
+proc homomorphism(Module tar, Module src, matrix mat)
+{
+Homomorphism f;
+f.source = src;
+f.target = tar;
+f.rule = mat;
+return(f);}
+
+proc printHom(Homomorphism f)
+{
+def R=basering;
+setring(M.over);
+print(net(f.rule));
+print("");
+print(netModule(f.target)+net(" <--- ")+netModule(f.source));
+setring R;
+}
+
+proc target(Homomorphism f)
+{
+ return(f.target);
+}
+
+proc source(Homomorphism f)
+{
+ return(f.source);
+}
+
+proc kerHom(Homomorphism f)
+{
+Module T=f.target;
+def R=basering;
+setring(T.over);
+Module NN=present(f.target);
+Module MM=present(f.source);
+module N=NN.relations;
+module M=MM.relations;
+matrix A=f.rule;
+matrix K=hom_kernel(A,M,N);
+Module KE=coker(K);
+setring R;
+return(KE);
+}
+
+// better write as image
+
+
+
+proc addModules(Module M, Module N)
+{
+  def R=basering;
+  setring(M.over);
+  if (!((image(M.relations))==(image(N.relations)))){ERROR("expected submodules of the same module")};
+  Module MN;
+  MN.over = basering;
+  MN.generators = concat(M.generators,N.generators);
+  MN.relations = N.relations;
+  setring R;
+  return(MN);
+}
+
+
+
+proc compareModules(Module M, Module N)
+{
+  def R=basering;
+  setring(M.over);
+  Module MP=minimize(M);
+  Module NP=minimize(N);
+  int re;
+  if ((MP.relations)==(NP.relations)){re=1;};
+  setring R;
+  return(re);
+}
+
+proc hom(Module M1,Module N1)
+{
+def R=basering;
+setring(M1.over);
+Module NN=present(N1);
+Module MM=present(M1);
+module N=NN.relations;
+module M=MM.relations;
+module h=Hom(M,N);
+Module H=coker(h);
+setring R;
+return(H);
+}

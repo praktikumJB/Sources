@@ -1,0 +1,197 @@
+///////////////////////////////////////////////////////////////////////////////
+version="$Id$";
+category="Miscellaneous";
+info="
+LIBRARY:  net.lib    Net structures for pretty printing
+
+AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
+          M. Mueller, mkmuelle @ mathematik.uni-kl.de
+          H. Rombach, HRombach @ gmx.de
+          M. Stein, maxstein77 @ web.de
+
+OVERVIEW:
+
+Nets are arrays of characters, which are printed in a matrix format. They can be
+concatenated horizontally and vertically. When concatenating horizontally, empty
+rows are filled with spaces. All Singular types can be converted to a Net by applying
+the command net.
+
+KEYWORDS:
+net
+
+
+TYPES:
+Net                     The class of all nets
+
+PROCEDURES:
+net(def)                general procedure to generate a net from a Singular object
+catNets(Net,Net)         horizontal concatenation
+stackNets(Net,Net)       vertical concatenation
+printNet
+";
+
+LIB "matrix.lib";
+
+
+proc mod_init()
+{
+LIB "methods.lib";
+newstruct("Net","list rows");
+system("install","Net","print",printNet,1);
+system("install","Net","+",catNets,2);
+HashTable F = hashTable(list(list("ring"),list("matrix"),list("int"),list("string")),list("netRing","netMatrix","netInt","netString"));
+Method net_ = method(F);
+export(net_); 
+//export for newstructs is broken in Singular at the moment, so net_ is not available outside of the library, however net works
+installMethod(net_,"net");
+}
+
+
+static proc emptyString(int n)
+{
+string S="";
+for (int j=1; j<=n; j++)
+{
+   S=S+" ";
+}
+return(S);}
+
+proc printNet(Net N)
+{
+list L = N.rows;
+for (int j=1; j<=size(L); j++)
+{
+   print(L[j]);
+}
+}
+
+
+proc stackNets(Net N, Net M)
+{
+list LN=N.rows;
+list LM=M.rows;
+Net NM;
+NM.rows=LN+LM;
+return(NM);}
+
+
+proc catNets(Net N, Net M)
+{
+list L;
+list LN=N.rows;
+list LM=M.rows;
+int widthN=size(LN[1]);
+int widthM=size(LM[1]);
+int nm=max(size(LN),size(LM));
+for (int j=1; j<=nm; j++)
+{
+    if (j>size(LN)){LN[j]=emptyString(widthN);}
+    if (j>size(LM)){LM[j]=emptyString(widthM);}
+    L[j]=LN[j]+LM[j];
+}
+Net NM;
+NM.rows=L;
+return(NM);}
+
+
+
+proc netList(list L1)
+{
+  Net N=net("[");
+  for (int j=1; j<=size(L1)-1; j++)
+  {
+     N=N+net(L1[j])+net(", ");
+  }
+  N=N+net(L1[size(L1)])+net("]");
+  return(N);
+}
+
+proc netCoefficientRing(def R)
+{
+  list RL = ringlist(R);
+  Net field;
+  list pf;
+  if (typeof(RL[1])=="list")
+  {
+    if (RL[1][1]==0){
+         field=net("QQ");
+         if (minpoly!=0){
+            field=field+net("[")+net(string(RL[1][2]))+net("]");
+            field=field+net("/")+net(minpoly);
+         } else {
+            field=field+net("(")+net(string(RL[1][2]))+net(")");
+         }
+    }
+    if (RL[1][1]>0){
+       pf = primefactors(RL[1][1]);
+       if (pf[2][1]>1)
+       {
+         field=net("FF_")+netPrimePower(pf[1][1],pf[2][1])+net("");
+       } else {
+         field=net("FF_")+net(RL[1][1]);
+         if (minpoly!=0){
+            field=field+net("[")+net(string(RL[1][2]))+net("]");
+            field=field+net("/")+net(minpoly);
+         } else {
+            field=field+net("(")+net(string(RL[1][2]))+net(")");
+         }
+       }
+    }
+  } else {
+    if (RL[1]==0){field=net("QQ");}
+    if (RL[1]>0){
+         field=net("FF_")+net(RL[1]);
+    }
+  }
+return(field);}
+
+proc netPrimePower(int n, int r)
+{
+  if (r==1){return(net(n));}
+  return(net(n)+net("^")+net(r));
+}
+
+
+proc netRing(def R)
+{
+  list RL = ringlist(R);
+  Net N=netCoefficientRing(R)+net("[")+net(string(RL[2]))+net("]");
+  return(N);
+}
+
+proc netMatrix(matrix M){
+    list L;
+    int wd,defect;
+    for (int j=1; j<=nrows(M); j++)
+    {
+       L[j]=string(submat(M,j,1..ncols(M)));
+       if (size(L[j])>wd){wd=size(L[j]);}
+    }
+    for (j=1; j<=nrows(M); j++)
+    {
+       defect=wd-size(L[j]);
+       L[j]="| "+L[j]+emptyString(defect)+" |";
+    }
+    Net NM;
+    NM.rows=L;
+return(NM);}
+
+proc netInt(int M){
+  Net N;
+  list L;
+  L[1]=string(M);
+  N.rows=L;
+return(N);}
+
+proc netString(string M){
+  Net N;
+  list L;
+  L[1]=M;
+  N.rows=L;
+return(N);}
+
+proc netPoly(poly M){
+  Net N=netString(string(M));
+return(N);}
+
+// usw
