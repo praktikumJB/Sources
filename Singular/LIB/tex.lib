@@ -6,7 +6,7 @@ LIBRARY:  tex.lib    printing latex code
 
 AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
           M. Mueller, mkmuelle @ mathematik.uni-kl.de
-          H. Rombach, HRombach @ gmx.de
+          H. Rombach, rombach @ mathematik.uni-kl.de
           M. Stein, maxstein77 @ web.de
 
 OVERVIEW:
@@ -40,13 +40,193 @@ installMethod(tex_,"tex");
 }
 
 
-proc texMatrix(matrix m){}
+//until the stuff above works
+proc texALL(def d){
+	if(typeof(d)=="ring"){
+		return(texRing(d));
+	}
+	if(typeof(d)=="int"){
+		return(texInt(d));
+	}
+	if(typeof(d)=="string"){
+		return(texString(d));
+	}
+	if(typeof(d)=="poly"){
+		return(texPoly(d));
+	}
+	if(typeof(d)=="list"){
+		return(texList(d));
+	}
+	if(typeof(d)=="ideal"){
+		return(texIdeal(d));
+	}
+	if(typeof(d)=="matrix"){
+		return(texMatrix(d));
+	}
+	return("Sorry, not worked with "+string(typeof(d))+"  ,yet.")
+}
 
-proc texInt(matrix m){}
-
-proc texString(matrix m){}
 
 
+proc texPolyMatrix(poly p){ // "texPoly" ohne schließende $
+
+string Output=texPoly(p);
+
+Output=Output[2,size(Output)-2];
+
+return(Output);
+}
+
+
+
+proc texMatrix(matrix m){
+
+int r=nrows(m);
+int c=ncols(m);
+int i,j;
+string t;
+int z=0;
+
+print("HINT: package \"amsmath\" is required for this operation.");
+string s="$ \\begin{pmatrix} ";
+
+for (i=1; i<=r; i++){
+
+	for (j=1; j<c; j++){
+
+
+		t=string(texPolyMatrix(m[j][i]));
+				
+
+				
+				s=s+t+" & ";
+
+				}				
+		
+	if(i<r){
+		t = string(texPolyMatrix(m[c][i]));
+		s = s + t + " \\\\ ";
+	}
+
+}	
+	t = string(texPolyMatrix(m[c][r]));
+	s = s + t + " \\end{pmatrix}$";
+
+return(s);
+}
+/*********************************************************
+**							**
+**			POLY				**
+**							**
+**______________________________________________________**
+**							**
+**texMonom(string s,list l)				**
+**	IN:	@s: monom as string			**
+**		@l: variables				**
+**	OUT:	monom in LateX				**
+**							**
+**texErase(string s,list l)				**
+**	IN:	@s: string(poly)			**
+**		@l: strings to erase			**
+**	OUT:	s without strings in l			**
+**							**
+**							**
+**							**
+**							**
+**							**
+**							**
+*********************************************************/
+
+
+
+
+
+
+
+//buggy functions following
+proc texErase(string s,list l){
+//	@s: custom string
+//	@l: characters to erase
+	int k,L,i;
+	string S = s;
+	for(k=1;k<=size(l);k++){
+		i = find(S,l[k]);
+		while(i!=0){
+			L =size(S);
+			S = S[1,i-1]+S[i+1,L-i];
+			i = find(S,l[k]);
+		}
+	}
+return(S);
+}
+proc texCoef(string s,list l2){
+//	@s:  coefficient
+//	@2l: parameters (ringlist(r)[1][2])
+	
+	string S;
+	int i;
+	list l3;//dummy
+	if(size(l2)>0){
+		list L2 = "*","^","(",")";	//not rly needed, but just for fun
+		s = texErase(s,L2);		//its getting erases in texMonom, too
+		i = find(s,"/");
+		if(i!=0){S = "\\frac{"+texMonom(s[1,i-1],l2,l3)+"}{"+texMonom(s[i+1,size(s)-i],l2,l3)+"}";}
+		else{S="{"+texMonom(s,l2,l3)+"}";}
+	}
+	else{S=s;}
+
+return(S);
+}
+proc texMonom(string s,list l,list l2){
+//	@s:  monom
+//	@l:  variables	
+//	@l2: parameters
+	list L2 = "*","^","(",")";
+	string S,s2;
+	int k,j,i,L;
+	int c = 0;//=0 noch kein koeff. =1 schon ein koeff 
+	int b;//=0 noch kein neue variable =1 schon eine neue variable
+	s2 = texErase(s,L2);
+	for(k=1;k<=size(l);k++){
+		i = size(s2);
+		b = 0;
+		for(j=1;j<=size(l);j++){
+			L=size(l[j]);
+			if(find(s2,l[j])!=0 && find(s2,l[j])<=i){i = find(s2,l[j]);b=1;}
+		}
+		if(b==0){i=0;}
+		else{
+			if(c==1){S=S+"^";}
+			else{c=1;}
+			S = S + "{" +texCoef(s2[1,i-1],l2)+"}"+texRingVariablesEncoding(s2[i,L]);
+			
+
+			if(s2[i+L]!=""){s2 	= s2[i+L,size(s2)-i-L+1];}
+			else{s2="";}
+		}
+	}
+	if(size(s2)>0){
+		if(c==1){S=S+"^";}
+		S = S + "{" + s2 + "}";
+	}
+return(S);
+}
+proc texPolyNEW(poly p,list l, list l2){
+	string s,S;
+	poly d,P;
+	P = p;
+	for(int i=1;i<=size(p);i++){
+		d = lead(P);
+		s = string(d);
+		S = S+"+"+texMonom(s,l,l2);
+		P = P - d;
+	}
+	
+return(S);
+}
+
+
+/*followingfunctionswillbeeraste*/
 proc texVariablesOfMonom(poly p){//returns a list of the variables of a monom (in dp/lp whatever...) 
 	/*
 	INPUT:
@@ -102,8 +282,6 @@ proc texVariablesOfMonom(poly p){//returns a list of the variables of a monom (i
 	}
 return(l);
 }
-
-
 proc texPoly(poly p){
 	string  S ="$";
 	list	l;
@@ -139,7 +317,6 @@ proc texPoly(poly p){
 				}
 				else{
 					s = string((-1)*leadcoef(P));
-					print(s);
 					S = S + "\\frac{"+string((-1)*leadcoef(P))[1,find(s,"/")-1]+"}";
 					S = S + "{" + string((-1)*leadcoef(P))[find(s,"/")+1,size(string(leadcoef(P)))-find(s,"/")-1]+"}";
 				}	
@@ -168,21 +345,246 @@ proc texPoly(poly p){
 
 		}
 		P = P - d;
-		if(i<size(p) && leadcoef(lead(P))>0){
-			S=S+"+";
-		}
-		if(i<size(p) && leadcoef(lead(P))<0){
-			S=S+"-";
-		}
-		if(i ==size(p) && leadcoef(d)==1 && b ==1 ){
-			S = S+"1";	
-		}
-		//S = S + "| Runde: i = " + string(i)+" | ";		
+		if(i<size(p) && leadcoef(lead(P))>0){S=S+"+";}
+		if(i<size(p) && leadcoef(lead(P))<0){S=S+"-";}
+		if(i ==size(p) && leadcoef(d)==1 && b ==1 ){S = S+"1";}	
 	}
 	S = S + "$";
 return(S);
 }
 
+/*********************************************************
+**							**
+**			ring				**
+**							**
+**______________________________________________________**
+**							**
+** HINT: lateX package  amssymb is required		**
+**							**
+**	list l: ringlist(r) with:			**
+**		l1: (characteristic),minpoly,parameter	**
+**		l2: variables				**
+**							**
+**							**
+**	string p: minimalpolynom			**
+**	string c: characteristic			**
+**	string P: parameter (characteritic)		**
+**	string V: variables				**
+**	string S: output				**
+**							**
+**							**
+**							**
+**	int i:	counter variable			**
+**	int b:  switch/case modifier			**
+**							**
+**							**
+**	int bchar: what "kind" of characteristic	**
+**		= 1: integer modulo tower		**
+**		= 2: additional digits (i.e. real)	**
+**		= 3: parameters exists			**
+**							**
+**							**
+**							**
+**							**
+**							**
+*********************************************************/
+
+
+
+proc texRing(def r){
+	list l,l1,l2;
+	l 	= ringlist(r);
+	l1	= l[1];
+	l2	= l[2];
+	
+
+
+	string c,p,P,V,C,S;
+	
+	int i,b;
+	int bchar;
+		
+	//characteristic
+	c  = charstr(r);		
+	bchar = 0;
+	if(find(c,",") != 0){
+		c 	= c[1,find(c,",")-1];
+		b = 0;
+		if(typeof(l[1][2][1]) != "string" && b==0&& c =="integer"){bchar= 1;b = 1;}	
+		if(typeof(l[1][2][1]) != "string" && b==0){bchar  = 2;b=1;}
+		if(b==0){bchar = 3;}
+	}	
+	
+	//minimalpolynom
+	p = string(minpoly);
+	
+
+
+
+	//parameters
+	if(bchar==3){
+		if(p != "0"){P=P+"[";}						
+		else{P=P+"(";}
+			for(i=1;i<size(l[1][2]);i++){
+				P = P + string(l[1][2][i]) +",";
+			}
+			P=P+string(l[1][2][size(l[1][2])]);
+		if(p != "0"){P=P + "]/_{"+p+"}";}
+		else{P=P+")";}
+	}
+
+
+	//variables
+	V = V + "[";
+	for(i = 1;i<size(l2);i++){
+		V = V + texRingVariablesEncoding(string(l2[i])) + ",";	
+	}
+	V = V + texRingVariablesEncoding(string(l2[size(l2)]));
+	V = V + "]";
+
+	b = 0;
+	if(c == "integer" && b == 0){
+		if(bchar==1){							//Z/(p^k)
+			if(string(l[1][2][2])!="1"){
+			C=C+"\\mathbb{Z}/_{"+string(l[1][2][1])+"^"+string(l[1][2][2])+"}";
+			}
+			else{C=C+"\\mathbb{Z}/_"+string(l[1][2][1]);}
+			b = 1;
+		}
+		else{C = C + "\\mathbb{Z}";b=1;} 				//Z
+	}
+	if(c == "0" && b == 0){C = C + "\\mathbb{Q}";b=1;}			//Q
+	if(c == "real" && b == 0){C = C + "\\mathbb{R}";b=1;}			//R
+	if(c == "complex" && b == 0){
+		b=1;
+		if(typeof(l[1][3]) != "none"){
+			if(l[1][3]!="i"){C = C + "\\mathbb{R}("+l[1][3]+")";}	//R(j)
+			else{C = C + "\\mathbb{C}";}
+		}
+		else{C = C + "\\mathbb{C}";}					//C
+	}
+	if(b == 0){C = C + "\\mathbb{Z}/_{"+c+"}";b=1;}				//Z/p
+	
+	
+	//epic conclusion
+	if(size(P)!=0){S = S + C+P+V;}
+	else{S=S+C+V;}
+	
+	S = "$" + S + "$";
+return(S);
+}
+
+/*required for texRing and texMonom*/
+proc texRingVariablesEncoding(string s){
+	string S;
+	int p; //position of "("
+	if(size(s)<=1){S = s;}
+	else{
+		if(s[size(s)]==")"){//Variables of Type x(1),x(2),...
+			p = find(s,"(");
+			S = S + s[1,p-1] + "_{" + s[p+1,size(s)-3] + "}";
+		}
+		else{
+			S = s[1]+"_{"+s[2,size(s)-1]+"}";
+		}
+	}
+
+return(S);
+}
+/*********************************************************
+**							**
+**			IDEAL				**
+**							**
+*********************************************************/
+
+
+proc texIdeal(ideal I){
+	string S;
+	list l = list(I);
+	S = S+"<";
+	S = S + texList(l);
+	S = S+">";
+return(S);
+}
+
+
+/*********************************************************
+**							**
+**			LIST				**
+**							**
+*********************************************************/
+proc texList(list l){
+	string S;
+	int i;
+	S = S + "$\\left\\{";
+	for(i=1;i<size(l);i++){
+		S=S+texALL(l[i])[2,size(texALL(l[i]))-2]+";";
+	}
+	S = S+texALL(l[size(l)])[2,size(texALL(l[i]))-2]+"\\right\\}$";
+return(S);
+}
+
+
+/*********************************************************
+**							**
+**			INT				**
+**							**
+*********************************************************/
+proc texInt(int i){
+	return("$"+string(i)+"$");
+}
+
+
+/*********************************************************
+**							**
+**			STRING				**
+**							**
+*********************************************************/
+proc texString(string s){
+	return("$"+s+"$");
+}
+
+/*********************************************************
+**							**
+**			COMPILE				**
+**							**
+*********************************************************/
+
+
+proc texMakePDF(string s){return(texMakeFile(s,"pdf"));}
+proc texMakeDVI(string s){return(texMakeFile(s,"dvi"));}
+proc texMakeFile(string s, string m){
+	
+	//@s: string, which will be compiled
+	//@#: choice whether dvi//pdf
+	
+	string Sstart 	= "\\documentclass[a4paper,10pt]{article} \\author{SingularAlgebraSystem} \\usepackage{amssymb} \\begin{document} ";
+	string Send	= " \\end{document}";
+	string S = Sstart + s + Send;	
+	write(":w singular_latex.tex", S);
+	
+
+	int b = 0;
+	
+	if(m == "dvi"){
+		b = 1;
+		system("sh","latex singular_latex.tex");
+		
+	}
+	if(m=="pdf"){
+		b = 1;
+		system("sh","pdflatex singular_latex.tex");
+		
+	}
+	
+	return("file has been created.");
+}
+proc texViewPDF(){return(texViewFile("pdf"));}
+proc texViewDVI(){return(texViewFile("dvi"));}
+proc texViewFile(string m){
+	if(m == "pdf"){return(system("sh","kpdf singular_latex.tex"));}
+	if(m == "dvi"){return(system("sh","kdvi singular_latex.tex"));}
+}
 proc texRingTest(){
 	
 	print("ring r = 32003,(x,y,z),dp;");
@@ -257,169 +659,5 @@ proc texRingTest(){
 return("Syntax korrekt. Semantik manuell prüfen.");
 }
 
-proc texRing(def r){
-	print("HINT: lateX package \"amssymb\" is required.");
-	
-	list l 	= ringlist(r);	//Eigenschaften des Rings...
-	int i;			//Zählervariablen
-	int b;			//switch/case Manipulation
-	string S  = "$";		//output final
-	string V;		//output ring variables
-	string S2 = ", where "; //output second half(if minpoly exists) 
-	
-	//Auslesen der Charakteristik (ohne Parameter)
-	string c  = charstr(r);		
-	string c2;			//"Restinformationen"
-	int bchar = 0;
-	if(find(c,",") != 0){
-		c2 	= c[find(c,",")+1,size(c)];
-		c 	= c[1,find(c,",")-1];
-	}
-	if(size(c2) > 0){
-		b = 0;
-		//if(find(c2,"^") != 0 && b == 0){bchar=1;b=1;}	//Z/a^b
-		if(typeof(l[1][2][1]) != "string" && b ==0 && c =="integer"){
-			bchar	=1;
-			b	=1;
-		}	
-		if(typeof(l[1][2][1])!=	"string" && b ==0){bchar  = 2;b=1;}//addi. digits
-		
-		if(b==0){bchar = 3;}				//parameter
-	}	
-		
-	
-	//hunt for minpoly
-	int bminpoly = 0; //=1 => minpoly existiert
-	int iminpoly;
-	list l1 = l[1];
-	for(i = 1;i<=size(l1);i++){
-		if(typeof(l1[i])=="ideal"){
-			if(l1[i]!=0 && string(l1[i]) != "i" ){
-				bminpoly	=1;
-				iminpoly 	=i;
-			}
-		}
-	}
-	
-	
-	
-	
 
 
-	//aufbauen der Parameter (abhängig von transzendent oder algebraisch
-	string P;						//Parameter
-	if(bchar==3){
-		P = "\\mathbb{Z}/_{"+c;
-		//print(bminpoly);
-		if(bminpoly == 1){P=P+"[";}
-		else{P=P+"(";}
-			for(i=1;i<size(l[1][2]);i++){
-				P = P + string(l[1][2][i]) +",";
-			}
-			P=P+string(l[1][2][size(l[1][2])]);
-		if(bminpoly == 1){P=P+"]";}
-		else{P=P+")";}
-		P = P+"}";
-	}
-
-	//entsprechend der Charakteristik unser
-	string C;						//"Oberring"
-	b = 0;
-	if(bchar==3 && b == 0){C = C + nameof(r); b = 1;}
-	if(c == "integer" && b == 0){
-		if(bchar==1){
-			if(string(l[1][2][2])!="1"){
-			C=C+"\\mathbb{Z}/_{"+string(l[1][2][1])+"^"+string(l[1][2][2])+"}";
-			}
-			else{C=C+"\\mathbb{Z}/_"+string(l[1][2][1]);}
-			b = 1;
-		}
-		else{C = C + "\\mathbb{Z}";b=1;} 			//Z
-	}
-	if(c == "0" && b == 0){C = C + "\\mathbb{Q}";b=1;}		//Q
-	if(c == "real" && b == 0){C = C + "\\mathbb{R}";b=1;}		//R
-	if(c == "complex" && b == 0){
-		b=1;
-		if(typeof(l[1][3]) != "none"){
-			if(l[1][3]!="i"){C = C + "\\mathbb{R}("+l[1][3]+")";}//R(j)
-			else{C = C + "\\mathbb{C}";}
-		}
-		else{C = C + "\\mathbb{C}";}				//C
-	}
-	if(b == 0){C = C + "\\mathbb{Z}/_{"+c+"}";b=1;}			//Z/p
-	
-	//aufbauen der Variablen
-	V = V + "[";
-	list v = l[2];
-	for(i = 1;i<size(v);i++){
-		V = V + texRingVariablesEncoding(string(v[i])) + ",";	
-	}
-	V = V + texRingVariablesEncoding(string(v[size(v)]));
-	V = V + "]";
-	
-	
-	
-	
-	//epic conclusion
-	if(size(P)!=0){S=S+C+V+S2+C + "="+P;}
-	else{S=S+C+V;}
-	
-	S = S +"$";
-return(S);
-}
-
-/*required for texRing*/
-proc texRingVariablesEncoding(string s){
-	string S;
-	int p; //position of "("
-	if(size(s)<=1){S = s;}
-	else{
-		if(s[size(s)]==")"){//Variables of Type x(1),x(2),...
-			p = find(s,"(");
-			S = S + s[1,p-1] + "_{" + s[p+1,size(s)-3] + "}";
-		}
-		else{
-			S = s[1]+"_{"+s[2,size(s)-1]+"}";
-		}
-	}
-
-return(S);
-}
-
-proc texMakePDF(string s){return(texMakeFile(s,"pdf"));}
-proc texMakeDVI(string s){return(texMakeFile(s,"dvi"));}
-proc texMakeFile(string s, string m){
-	/*
-	@s: string, which will be compiled
-	@#: choice whether dvi//pdf
-	*/
-	string Sstart 	= "\\documentclass[a4paper,10pt]{article} \\author{SingularAlgebraSystem} \\usepackage{amssymb} \\begin{document} ";
-	string Send	= " \\end{document}";
-	string S = Sstart + s + Send;	
-	write(":w /tmp/singular_latex", S);
-	int b = 0;
-	
-	if(m == "dvi"){
-		b = 1;
-		
-		system("sh","latex /tmp/singular_latex");
-	}
-	if(m=="pdf"){
-		b = 1;
-		system("sh","pdflatex /tmp/singular_latex");
-	}
-	
-	return("tex-file has been created.");
-}
-proc texViewPDF(){return(texViewFile("pdf"));}
-proc texViewDVI(){return(texViewFile("dvi"));}
-proc texViewFile(string m){
-	if(m == "pdf"){return(system("sh","kpdf /tmp/singular_latex.tex"));}
-	if(m == "dvi"){return(system("sh","kdvi /tmp/singular_latex.tex"));}
-}
-
-
-
-
-
-// usw
