@@ -116,19 +116,9 @@ return(s);
 }
 /*********************************************************
 **							**
-**			POLY				**
+**			  POLY				**
 **							**
 **______________________________________________________**
-**							**
-**texMonom(string s,list l)				**
-**	IN:	@s: monom as string			**
-**		@l: variables				**
-**	OUT:	monom in LateX				**
-**							**
-**texErase(string s,list l)				**
-**	IN:	@s: string(poly)			**
-**		@l: strings to erase			**
-**	OUT:	s without strings in l			**
 **							**
 **							**
 **							**
@@ -137,93 +127,93 @@ return(s);
 **							**
 *********************************************************/
 
-
-
-
-
-
-
-//buggy functions following
-proc texErase(string s,list l){
-//	@s: custom string
-//	@l: characters to erase
-	int k,L,i;
-	string S = s;
-	for(k=1;k<=size(l);k++){
-		i = find(S,l[k]);
-		while(i!=0){
-			L =size(S);
-			S = S[1,i-1]+S[i+1,L-i];
-			i = find(S,l[k]);
-		}
-	}
-return(S);
-}
-proc texCoef(string s,list l2){
-//	@s:  coefficient
-//	@2l: parameters (ringlist(r)[1][2])
-	
+proc texPolyN(poly p){
 	string S;
+	
 	int i;
-	list l3;//dummy
-	if(size(l2)>0){
-		list L2 = "*","^","(",")";	//not rly needed, but just for fun
-		s = texErase(s,L2);		//its getting erases in texMonom, too
-		i = find(s,"/");
-		if(i!=0){S = "\\frac{"+texMonom(s[1,i-1],l2,l3)+"}{"+texMonom(s[i+1,size(s)-i],l2,l3)+"}";}
-		else{S="{"+texMonom(s,l2,l3)+"}";}
-	}
-	else{S=s;}
+	int nvar,npar;
+	nvar = nvars(basering);	
+	npar = npars(basering);
 
-return(S);
-}
-proc texMonom(string s,list l,list l2){
-//	@s:  monom
-//	@l:  variables	
-//	@l2: parameters
-	list L2 = "*","^","(",")";
-	string S,s2;
-	int k,j,i,L;
-	int c = 0;//=0 noch kein koeff. =1 schon ein koeff 
-	int b;//=0 noch kein neue variable =1 schon eine neue variable
-	s2 = texErase(s,L2);
-	for(k=1;k<=size(l);k++){
-		i = size(s2);
-		b = 0;
-		for(j=1;j<=size(l);j++){
-			L=size(l[j]);
-			if(find(s2,l[j])!=0 && find(s2,l[j])<=i){i = find(s2,l[j]);b=1;}
-		}
-		if(b==0){i=0;}
-		else{
-			if(c==1){S=S+"^";}
-			else{c=1;}
-			S = S + "{" +texCoef(s2[1,i-1],l2)+"}"+texRingVariablesEncoding(s2[i,L]);
-			
 
-			if(s2[i+L]!=""){s2 	= s2[i+L,size(s2)-i-L+1];}
-			else{s2="";}
-		}
-	}
-	if(size(s2)>0){
-		if(c==1){S=S+"^";}
-		S = S + "{" + s2 + "}";
-	}
-return(S);
-}
-proc texPolyNEW(poly p,list l, list l2){
-	string s,S;
-	poly d,P;
-	P = p;
-	for(int i=1;i<=size(p);i++){
-		d = lead(P);
-		s = string(d);
-		S = S+"+"+texMonom(s,l,l2);
-		P = P - d;
+	list P,V,E;//parameters, variables, empty
+	V = ringlist(basering)[2];
+	if(size(ringlist(basering)[1])>1){
+		P = ringlist(basering)[1][2];
+		if(typeof(ringlist(basering)[1][2][1]) == "int"){P = E;}
 	}
 	
+	
+	list l = ringlist(basering);
+	for(i = 1;i<=npar;i++){
+		l[2][nvar+i] = "varTMP" + string(i);
+	}
+	def ringTMP = ring(l);
+
+	for(i = 1;i<size(p);i++){
+		S = S + texTerm(p[i],ringTMP,nvar)+"+";
+	}
+	S = S + texTerm(p[i],ringTMP,nvar);
+
+	//S = "$" + S + "$";
 return(S);
 }
+proc texTerm(poly p,def ringTMP,int nvar){
+	string S;
+	int b;
+	intvec exp 	= leadexp(p);		//exponents
+	list v 		= ringlist(basering)[2];//variables 
+	poly c		= leadcoef(p);		//coefficient
+	for(int i=1;i<=size(exp);i++){
+		b = 0;
+		if(exp[i]==1){S = S + string(v[i]);b=1;}
+		if(exp[i]!=0 && b==0){S = S + string(v[i])+"^{"+string(exp[i])+"}";b=1;}
+	}
+	string C = texCOEF(c,ringTMP,nvar);
+	S = C + S;
+return(S);
+}
+proc texCOEF(poly c,def ringTMP, int nvar){
+	//MENTION: IN C THERE ARE ONLY PARAMETERS, NO VARIABLES
+	string S,S_TMP;
+	def origin = basering;
+	setring(ringTMP);//CAREFULL. NOW WE ARE IN OUR COOL HELPFUL RING
+	poly c = fetch(origin,c);//c=c
+	int i,k,L;
+	int n 	= nvars(basering);
+	int m	= npars(basering);
+	list l 	= ringlist(basering);
+	for(i = 1;i<=m;i++){
+		c = subst(c,par(i),var(nvar+i));
+	}
+	int b = 0;
+	for(i = 1;i<=size(l[2]);i++){
+		if(find(string(c),string(l[2][i]))>0){b=1;}
+		
+	}
+	
+	//NOW there is NO PARAMETER. ONLY varTMP IN POLY c.
+	//WE NEED TO KILL OUR PREVIOUS BASERING PARAMETERS
+	l[1]=l[1][1];
+	def r = ring(l);
+	setring(r);
+	poly c = fetch(ringTMP,c);
+	if(b==1){S_TMP = texPolyN(c);}
+	else{S_TMP = string(c);}
+	//WE HAVE NOW A STRING, WITH THE varTMP INSTEAD of true parameters.
+	/*for(i=1;i<=m;i++){
+		k = find(S_TMP,string(l[2][nvar+i]));
+		while(k!=0){
+			//continue ur job here mr.crazyguy
+		}
+
+	}
+	*/	
+	S=S_TMP+S;
+return(S);
+}
+
+
 
 
 /*followingfunctionswillbeeraste*/
@@ -543,6 +533,24 @@ proc texInt(int i){
 proc texString(string s){
 	return("$"+s+"$");
 }
+
+/*********************************************************
+**							**
+**			NUMBER				**
+**							**
+*********************************************************/
+
+proc texNumber(number n){
+	string s,S;
+	s = string(n);
+	find(s,"/");
+
+return(S);
+}
+
+
+
+
 
 /*********************************************************
 **							**
