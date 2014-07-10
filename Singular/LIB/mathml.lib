@@ -127,6 +127,44 @@ proc mathmldelete(string z,string a) {
 
 
 
+proc mathmlTransform(string z,string t1,string t2) {
+string g=z+";";
+ while (find(g,t1)!=0) {
+  g=g[1,find(g,t1)-1]+t2+g[find(g,t1)+size(t1),size(g)-find(g,t1)-size(t1)+1];
+ }
+return(g);
+}
+
+proc mathprob (poly a,def r){
+poly d=leadcoef(a);
+list l12=ringlist(basering);
+for(int i=1;i<=size(l12[1][2]);i++) {
+l12[2][i]=l12[1][2][i]+"1";
+l12[1][2][i]=l12[1][2][i]+"0";
+}
+def w=ring(l12);
+setring(w);
+keepring w;
+poly f=fetch(r,d);
+print(basering);
+list l12=ringlist(basering);
+for (i=1;i<=size(l12[1][2]);i++) {
+f=subst(f,par(i),var(i));
+}
+while (size(l12[2])>size(l12[1][2])) {
+ l12[2]=delete(l12[2],size(l12[1][2])+1);
+ }
+for (i=1;i<=size(l12[2]);i++) {
+l12[2][i]=l12[2][i][1,size(l12[2][i])-1];
+ }
+l12[1]=ringlist(r)[1][1];
+print(l12);
+def w2=ring(l12);
+keepring w2;
+poly f=fetch(w,f);
+return(f);
+}
+
 proc mathmlPoly(string s,string z){
 string g;
 string s2=s;
@@ -149,7 +187,7 @@ return(g);
 }
 
 proc mathmlPolynom(poly m,def r) {
-string g="<math xmlns=http://www.w3.org/1998/Math/MathML>";
+string g="<math xmlns=http://www.w3.org/1998/Math/MathML>";ring r2=0,x,lp;
 poly d=m; 
 string d1; 
 int h; 
@@ -159,7 +197,7 @@ int h;
   if (d1[1]=="(") {
    if (h>0) {g=g+"<mfrac><mrow>";}
    else     {g=g+"<mo>(</mo>";}
-   g=g+mathmlPoly(d1[2,find(d1,")")-2],string(ringlist(r)[1][2]));}
+   g=g+mathmlPoly(d1[2,find(d1,")")-2],string(ringlist(r)[1][2]));
   if (h>0) {g=g+"</mrow><mn>"+d1[find(d1,")")+2,h-1]+"</mn></mfrac>";}
   else     {g=g+"<mo>)</mo>";}
   }
