@@ -1,7 +1,25 @@
 /*Matrix: - lange Version: Standartpolynomausgabe: fertig
 			 - kurze Version: "Leitterm+..." : fertig	
-  Poly: - 
+	Poly: - die Polyausgabe scheint auch für Ringe mit algeraisch erweiterten Koeffizientenringen zu funktionieren
+  
+	Procedures: - netList
+  				- netCofficientRing
+  				- netPrimePower
+  				- netMap
+  				- netMap2 
+  				- netMatrix
+  				- netMatrixShort
+  				- netBigIntMatrix
+  				- netIntMatrix 
+  				- netInt
+  				- netŚtring
+  				- netMatrix3 (two-column poly output) 
+  				- netPoly
+  				- netPolyMatrix (entries for netMatrix3)
+  				- netIdeal
 */
+
+// globale Variable für die Ausgabenlänge von netIntMat etc.
 
 ///////////////////////////////////////////////////////////////////////////////
 version="$Id$";
@@ -11,7 +29,7 @@ LIBRARY:  net.lib    Net structures for pretty printing
 
 AUTHORS:  J. Boehm, boehm @ mathematik.uni-kl.de
           M. Mueller, mkmuelle @ mathematik.uni-kl.de
-          H. Rombach, HRombach @ gmx.de
+          H. Rombach, rombach @ mathematik.uni-kl.de
           M. Stein, maxstein77 @ web.de
 
 OVERVIEW:
@@ -41,25 +59,26 @@ LIB "qhmoduli.lib";
 
 proc mod_init()
 {
-LIB "methods.lib";
-newstruct("Net","list rows");
-system("install","Net","print",printNet,1);
-system("install","Net","+",catNets,2);
-HashTable F = hashTable(list(list("ring"),list("matrix"),list("int"),list("string")),list("netRing","netMatrix","netInt","netString"));
-Method net_ = method(F);
-export(net_); 
-//export for newstructs is broken in Singular at the moment, so net_ is not available outside of the library, however net works
+	LIB "methods.lib";
+	newstruct("Net","list rows");
+	system("install","Net","print",printNet,1);
+	system("install","Net","+",catNets,2);
+	HashTable F = hashTable(list(list("ring"),list("matrix"),list("int"),list("string")),list("netRing","netMatrix","netInt","netString"));
+	Method net_ = method(F);
+	export(net_); 
+	//export for newstructs is broken in Singular at the moment, so net_ is not available outside of the library, however net works
 installMethod(net_,"net");
 }
 
 
 static proc emptyString(int n)
 {
-string S="";
-for (int j=1; j<=n; j++)
-{
-   S=S+" ";
-}
+	string S="";
+	for (int j=1; j<=n; j++)
+	{
+  		S=S+" ";
+	}
+	
 return(S);
 }
 
@@ -67,25 +86,25 @@ return(S);
 
 ////
 proc printNet(Net N)
-{
-list L = N.rows;
-for (int j=1; j<=size(L); j++)
-{
-   print(L[j]);
+	{
+	list L = N.rows;
+	for (int j=1; j<=size(L); j++)
+	{
+  	 print(L[j]);
+	}
 }
-}
-
 
 
 
 ////
 proc stackNets(Net N, Net M)
 {
- list LN=N.rows;
- list LM=M.rows;
- Net NM;
- NM.rows=LN+LM;
- return(NM);
+	list LN=N.rows;
+	list LM=M.rows;
+	Net NM;
+	NM.rows=LN+LM;
+	
+return(NM);
 }
 
 
@@ -93,23 +112,25 @@ proc stackNets(Net N, Net M)
 ////
 proc catNets(Net N, Net M)
 {
-list L, MAX;
-list LN=N.rows;
-list LM=M.rows;
-int widthN=size(LN[1]);
-int widthM=size(LM[1]);
-MAX[1]=size(LN);
-MAX[2]=size(LM);
-int nm=Max(MAX); /*Eine Funktion max() ist in der Bib qhmoduli.lib und heißt Max(), als Argumente nimmt die Funktion Integer-Vektoren oder -Listen*/
-for (int j=1; j<=nm; j++)
-{
-    if (j>size(LN)){LN[j]=emptyString(widthN);}
-    if (j>size(LM)){LM[j]=emptyString(widthM);}
-    L[j]=LN[j]+LM[j];
+	list L, MAX;
+	list LN=N.rows;
+	list LM=M.rows;
+	int widthN=size(LN[1]);
+	int widthM=size(LM[1]);
+	MAX[1]=size(LN);
+	MAX[2]=size(LM);
+	int nm=Max(MAX); /*Eine Funktion max() ist in der Bib qhmoduli.lib und heißt Max(), als Argumente nimmt die Funktion Integer-Vektoren oder -Listen*/
+	for (int j=1; j<=nm; j++)
+	{
+   	if (j>size(LN)){LN[j]=emptyString(widthN);}
+    	if (j>size(LM)){LM[j]=emptyString(widthM);}
+    	L[j]=LN[j]+LM[j];
+	}
+	Net NM;
+	NM.rows=L;
+	
+return(NM);
 }
-Net NM;
-NM.rows=L;
-return(NM);}
 
 
 
@@ -173,8 +194,12 @@ return(field);
 ////
 proc netPrimePower(int n, int r)
 {
-  if (r==1){return(net(n));}
-  return(net(n)+net("^")+net(r));
+	if (r==1)
+	{
+		return(net(n));
+	}
+	
+return(net(n)+net("^")+net(r));
 }
 
 
@@ -184,7 +209,8 @@ proc netRing(def R)
 {
  	list RL = ringlist(R);
   	Net N=netCoefficientRing(R)+net("[")+net(string(RL[2]))+net("]");
-  	return(N);
+  	
+return(N);
 }
 
 
@@ -201,7 +227,7 @@ proc netMap( map f)
 	Source=string(nameof(preimage(f)));
 	Target=string(nameof(basering));
 
-	Output[1]=Map+": "+Source+" <-- "+Target;
+	Output[1]=Map+": "+Source+" -->I "+Target;
 
 	v=size(ringlist(preimage(f))[2]);
 	
@@ -215,7 +241,8 @@ proc netMap( map f)
 	}
 	
 	M.rows=Output;
-	return(M);
+	
+return(M);
 }
 
 
@@ -233,7 +260,7 @@ proc netMap2( map f)
 	Source=string(nameof(preimage(f)));
 	Target=string(nameof(basering));
 
-	Output[1]=Map+": "+Source+" <-- "+Target;
+	Output[1]=Map+": "+Source+" --> "+Target;
 
 	v=size(ringlist(preimage(f))[2]);
 	
@@ -247,9 +274,190 @@ proc netMap2( map f)
 	}
 	
 	M.rows=Output;
-	return(M);
+	
+return(M);
 }
 
+
+
+////
+proc netBigIntMatrix(bigintmat M)
+{ 
+	int Length=5; //Länge der Ausgabe
+	
+	string S;
+   list L, SizeCol;
+   int wd,defect;
+   int i,j;
+   
+ //
+   for (j=1; j<=ncols(M); j++)
+	{
+		SizeCol[j]=0;
+	}
+		
+//	
+	for (j=1; j<=ncols(M); j++)
+	{
+		for (i=1; i<=nrows(M) ; i++)
+		{
+			if ( SizeCol[j] < size(string(M[i,j])) )
+			{
+				SizeCol[j]=size(string(M[i,j]));
+			}
+		}
+	}
+//
+   for ( i=1; i<=nrows(M); i++ )
+   {
+   	for ( j=1; j<=ncols(M); j++ )
+    	{
+    		if ( j!=1 )
+    		{
+    			S=S+" ";
+    		}
+    		defect=SizeCol[j]-size(string(M[i,j]));
+    		S=S+string(M[i,j])+emptyString(defect);
+      }
+      L[i]=S;
+      S="";
+    }
+//      
+    for (j=1; j<=nrows(M); j++)
+    {
+       L[j]="| "+L[j]+" |";
+    }
+    
+    Net NM;
+    NM.rows=L;
+    
+return(NM);
+}
+
+
+
+////
+proc netBigIntMatrixShort(bigintmat M)
+{
+ 	int Length=5; // Länge der Ausgabe 
+ 
+	string S;
+   list L, SizeCol, SizeColShort;
+   int wd,defect;
+   int i,j;
+   
+ //
+   for (j=1; j <= ncols(M); j++)
+	{
+		SizeCol[j]=0;
+	}
+	
+//	
+	for (j=1; j <= ncols(M); j++)
+	{
+		SizeColShort[j]=0;
+	}
+	
+//
+	for (j=1; j <= ncols(M); j++)
+	{
+		for (i=1; i <= nrows(M) ; i++)
+		{
+			if ( SizeColShort[j] < size(string(M[i,j])) )
+			{
+				SizeCol[j]=size(string(M[i,j]));
+				SizeColShort[j]=size(string(M[i,j]));
+			}
+		}
+	}
+
+//
+	for (j=1; j <= ncols(M); j++)
+	{
+		if( SizeColShort[j] > Length )
+		{
+			SizeColShort[j]=Length;
+		}
+	}
+	
+// 
+    for (i=1; i<=nrows(M); i++ )
+    {
+    	for (j=1; j<=ncols(M); j++ )
+    	{
+    		if ( j!=1 )
+    		{
+    			S=S+" ";
+    		}
+    		
+    	// 
+    		if ( SizeCol[j] > 5 )
+    		{
+    			if ( size(string(M[i,j])) >= Length )
+    			{
+    				S=S+string(M[i,j])[1,Length]+"...";
+    			}
+    	 	
+    			else
+    			{
+    				defect=SizeColShort[j]+3-size(string(M[i,j]));
+    				S=S+string(M[i,j])+emptyString(defect);
+     			}
+     		}
+     		
+     		else
+     		{
+     			defect=SizeColShort[j]-size(string(M[i,j]));
+     			S=S+string(M[i,j])+emptyString(defect);
+     		}
+     		
+     	}
+     		
+      L[i]=S;
+      S="";
+    }
+    
+//      
+    for (j=1; j<=nrows(M); j++)
+    {
+       L[j]="| "+L[j]+" |";
+    }
+    
+    Net NM;
+    NM.rows=L;
+    
+return(NM);
+}
+
+
+
+////
+proc netIntMatrix(intmat M)
+{ 
+	
+	int m=nrows(M);
+	int n=ncols(M);
+	bigintmat B[m][n]=bigintmat(M);
+	
+	Net Output=netBigIntMatrix(B);
+	
+	return(Output);
+}	
+
+
+
+////
+proc netIntMatrixShort(intmat M)
+{ 
+	
+	int m=nrows(M);
+	int n=ncols(M);
+	bigintmat B[m][n]=bigintmat(M);
+	
+	Net Output=netBigIntMatrixShort(B);
+	
+	return(Output);
+}	
 
 
 
@@ -310,7 +518,8 @@ return(NM);
 
 
 ////
-proc netMatrix2(matrix M){ 
+proc netMatrixShort(matrix M)
+{ 
 	string S;
    list L, SizeCol;
    int wd,defect;
@@ -479,241 +688,248 @@ return(NM);
 
 
 ////
-proc netPoly(poly P){
-
- poly Lead;
- list Output;
- Net N;
- string Up, Down, Control; //getrennte Strings für die Ausgabe der beiden Zeilen
- int s,i;
- int v=-1;
- number Zero=0; // um bei den Vergleichen kompatibel zu machen
- number One=1;
-
-//
-if (P==0) {
-Down="0";
-}
+proc netPoly(poly P)
+{
+	poly Lead;
+	list Output;
+	Net N;
+	string Up, Down, Control; //getrennte Strings für die Ausgabe der beiden Zeilen
+	int s,i;
+	int v=-1;
+	number Zero=0; // um bei den Vergleichen kompatibel zu machen
+	number One=1;
 
 //
-else {
-	while(P!=0)
-	{	
-		Control=Down;
-		
-		if ( Control == "" ) 
-		{ 
-			if( leadcoef(P) == One || leadcoef(P) == -One )
-				{
-					if ( leadexp(P) == 0 )
-					{
-						if ( leadcoef(P) == One )
-						{
-							Down=Down+"1"; 
-							Up=Up+emptyString(1);
-						}
-							
-						else
-						{
-							Down=Down+"-1"; 
-							Up=Up+emptyString(2);
-						}
-					}
-						
-					else
-					{
-						if ( leadcoef(P) == One )
-							{
-							}	
-						else
-						{
-							Down=Down+"-"; 
-							Up=Up+emptyString(1);
-						}
-					}
-				}
-				
-			else
-			{
-				Down=Down+string(leadcoef(P)); // ganzer Koeffizient wird gesetzt
-				Up=Up+emptyString(size(string(leadcoef(P))));
-			}
-		}
-	
-		if ( Control != "" ) 
+	if (P==0) 
+	{
+		Down="0";
+	}
+
+//
+	else 
 		{
+		while(P!=0)
+		{	
+			Control=Down;
 		
-			Lead=leadcoef(P);
-		
-			if( Lead < Zero  ) // Negatives Vorzeichen setzen, Bedingung falsch -> Wahrheitswert 1
-			{
-				if ( Lead == -One ) // number == int ->richtige Wahrheitswerte
-				{
-				
-					if (  leadexp(P) == 0 )
+			if ( Control == "" ) 
+			{ 
+				if( leadcoef(P) == One || leadcoef(P) == -One )
 					{
-						Down=Down+"-1";
-						Up=Up+emptyString(2);
-					}
-					
-					else
-					{
-						Down=Down+"-";
-						Up=Up+emptyString(1);
-					}
-				}
+						if ( leadexp(P) == 0 )
+						{
+							if ( leadcoef(P) == One )
+							{
+								Down=Down+"1"; 
+								Up=Up+emptyString(1);
+							}
+							
+							else
+							{
+								Down=Down+"-1"; 
+								Up=Up+emptyString(2);
+							}
+						}
 						
+						else
+						{
+							if ( leadcoef(P) == One )
+								{
+								}	
+							else
+							{
+								Down=Down+"-"; 
+								Up=Up+emptyString(1);
+							}
+						}
+					}
+				
 				else
 				{
-					Down=Down+string(leadcoef(P));
-					Up=Up+emptyString(size(string(leadcoef(P))));
-				}
-				
-			}
-		
-			else // Bei positivem Koeffizienten muss die Verknüpfung gesetzt werden
-			{ 
-				Down=Down+"+";
-				Up=Up+emptyString(1);
-			
-				if( Lead != One )
-				{				
-					Down=Down+string(leadcoef(P));
+					Down=Down+string(leadcoef(P)); // ganzer Koeffizient wird gesetzt
 					Up=Up+emptyString(size(string(leadcoef(P))));
 				}
 			}
-		}
-
 	
-		if ( leadexp(P) != 0 ) 
-		{
-				
-			for(i=1; i<=size(leadexp(P)); i++)
+			if ( Control != "" ) 
 			{
-				if((leadexp(P)[i])!=0)
+		
+				Lead=leadcoef(P);
+		
+				if( Lead < Zero  ) // Negatives Vorzeichen setzen, Bedingung falsch -> Wahrheitswert 1
 				{
-					if(leadexp(P)[i]==1)
+					if ( Lead == -One ) // number == int ->richtige Wahrheitswerte
 					{
-						Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
-						Up=Up+emptyString(size(string(((ringlist(basering))[2])[i])));
+				
+						if (  leadexp(P) == 0 )
+						{
+							Down=Down+"-1";
+							Up=Up+emptyString(2);
+						}
+					
+						else
+						{
+							Down=Down+"-";
+							Up=Up+emptyString(1);
+						}
 					}
+						
 					else
 					{
-			
-					Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
-					Up=Up+emptyString(size(string(((ringlist(basering))[2])[i]))); /* +1 für "*" */
+						Down=Down+string(leadcoef(P));
+						Up=Up+emptyString(size(string(leadcoef(P))));
+					}
 				
-					Up=Up+string((leadexp(P))[i]); /* Der zugehörige Exponent wird hinzugefügt*/
-					Down=Down+emptyString(size(string((leadexp(P))[i])));
+				}
+		
+				else // Bei positivem Koeffizienten muss die Verknüpfung gesetzt werden
+				{ 
+					Down=Down+"+";
+					Up=Up+emptyString(1);
+			
+					if( Lead != One )
+					{				
+						Down=Down+string(leadcoef(P));
+						Up=Up+emptyString(size(string(leadcoef(P))));
 					}
 				}
 			}
-		}
+
 	
-	P=P-lead(P);
+			if ( leadexp(P) != 0 ) 
+			{		
+				for(i=1; i<=size(leadexp(P)); i++)
+				{
+					if((leadexp(P)[i])!=0)
+					{
+						if(leadexp(P)[i]==1)
+						{
+							Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
+							Up=Up+emptyString(size(string(((ringlist(basering))[2])[i])));
+						}
+						else
+						{
+						Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
+						Up=Up+emptyString(size(string(((ringlist(basering))[2])[i]))); /* +1 für "*" */
+				
+						Up=Up+string((leadexp(P))[i]); /* Der zugehörige Exponent wird hinzugefügt*/
+						Down=Down+emptyString(size(string((leadexp(P))[i])));
+						}
+					}
+				}
+			}
+	
+		P=P-lead(P);
+		}
 	}
- }
 
- Output=Up,Down;
- N.rows=Output;
+	Output=Up,Down;
+	N.rows=Output;
 
- return(N);
+return(N);
 }
 
 
 
 ////
-proc netPolyMatrix(poly M){
+proc netPolyMatrix(poly M)
+{
+	string Up, Down; //getrennte Strings für die Ausgabe der beiden Zeilen
 
- string Up, Down; //getrennte Strings für die Ausgabe der beiden Zeilen
+ 	if (M==0) 
+ 	{
+ 		Down="0";
+ 	}
 
- if (M==0) 
- {
- Down="0";
- }
-
- else {
+ 	else 
+ 	{
 
  /*getrennte Strings für die Ausgabe der beiden Zeilen*/
- int s,i;
+		int s,i;
 
- while(M!=0){
-
- if(Down==""){ //Erstes Zeichen wir in den String geschrieben
-	
-		if(leadcoef(M)==1 || leadcoef(M)==-1){
-			if(leadcoef(M)==1){
-				}
+ 		while(M!=0)
+ 		{
+			if(Down=="")
+			{ //Erstes Zeichen wir in den String geschrieben
+				if(leadcoef(M)==1 || leadcoef(M)==-1)
+				{
+					if(leadcoef(M)==1)
+					{
+					}
 					
-			else{
-				Down=Down+"-"; 
-				Up=Up+emptyString(1);
+					else
+					{
+						Down=Down+"-"; 
+						Up=Up+emptyString(1);
+					}
 				}
-		}
 		
-	else{
-		Down=Down+string(leadcoef(M)); // ganzer Koeffizient wird gesetzt
-		Up=Up+emptyString(size(string(leadcoef(M))));
-		}
-	}
-	
-	else{
-		if(leadcoef(M)<=0){ //Negatives Vorzeichen setzen
-			if (leadcoef(M)==-1){
-				Down=Down+"-";
-				Up=Up+emptyString(1);
-			}		
-				
-			else{
-				Down=Down+string(leadcoef(M));
+			else
+			{
+				Down=Down+string(leadcoef(M)); // ganzer Koeffizient wird gesetzt
 				Up=Up+emptyString(size(string(leadcoef(M))));
 			}
 		}
-		
-		else{ //Bei positivem Koeffizienten muss die Verknüpfung gesetzt werden
-			Down=Down+"+";
-			Up=Up+emptyString(1);
-			
-			if(leadcoef(M)!=1){
-				Down=Down+"+"+string(leadcoef(M));
-				Up=Up+emptyString(size(string(leadcoef(M)))+1);
-			}
-		}
-	}
-
 	
- if (leadexp(M)!=0){ //treten Variablen in lead(M) auf 
-	
-	for(i=1; i<=size(leadexp(M)); i++){
-	
-		if(((ringlist(basering))[2])[i]!=0){ // tritt die variable in lead
-		
-			if(((ringlist(basering))[2])[i]==1){ // Variable tritt in erster Potenz auf
-			
-					Down=Down+string(((ringlist(basering))[2])[i]); /*Variale werden aus der Ringliste geladen*/
-					Up=Up+emptyString(size(string(((ringlist(basering))[2])[i])));
-					
+		else
+		{
+			if(leadcoef(M)<=0) //Negatives Vorzeichen setzen
+			{ 
+				if (leadcoef(M)==-1)
+				{
+					Down=Down+"-";
+					Up=Up+emptyString(1);
+				}		
+				
+				else
+				{
+					Down=Down+string(leadcoef(M));
+					Up=Up+emptyString(size(string(leadcoef(M))));
 				}
-				
-			else{
+			}
+		
+			else{ //Bei positivem Koeffizienten muss die Verknüpfung gesetzt werden
+				Down=Down+"+";
+				Up=Up+emptyString(1);
 			
-					Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
-					Up=Up+emptyString(size(string(((ringlist(basering))[2])[i]))); /* +1 für "*" */
-				
-					Up=Up+string((leadexp(M))[i]); /* Der zugehörige Exponent wird hinzugefügt*/
-					
-					Down=Down+emptyString(size(string((leadexp(M))[i])));
+				if(leadcoef(M)!=1)
+				{
+					Down=Down+"+"+string(leadcoef(M));
+					Up=Up+emptyString(size(string(leadcoef(M)))+1);
+				}
 			}
 		}
-	}
- }
+
+	
+		if (leadexp(M)!=0) //treten Variablen in lead(M) auf 
+		{
+			for(i=1; i<=size(leadexp(M)); i++)
+			{
+				if(((ringlist(basering))[2])[i]!=0) // tritt die variable in lead
+				{ 
+					if(((ringlist(basering))[2])[i]==1) // Variable tritt in erster Potenz auf
+					{ 
+						Down=Down+string(((ringlist(basering))[2])[i]); /*Variale werden aus der Ringliste geladen*/
+						Up=Up+emptyString(size(string(((ringlist(basering))[2])[i])));
+					}
+					else
+					{
+						Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
+						Up=Up+emptyString(size(string(((ringlist(basering))[2])[i]))); /* +1 für "*" */
+				
+						Up=Up+string((leadexp(M))[i]); /* Der zugehörige Exponent wird hinzugefügt*/
+					
+						Down=Down+emptyString(size(string((leadexp(M))[i])));
+					}
+				}
+			}
+		}
 		
- M=M-lead(M);
- }
+		M=M-lead(M);
+ 		}
+	}
 
- }
-
- list Output=Up,Down;
+	list Output=Up,Down;
 
  return(Output);
 }
