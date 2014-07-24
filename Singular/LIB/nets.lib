@@ -1,26 +1,3 @@
-/*Matrix: - lange Version: Standartpolynomausgabe: fertig
-			 - kurze Version: "Leitterm+..." : fertig	
-	Poly: - die Polyausgabe scheint auch für Ringe mit algeraisch erweiterten Koeffizientenringen zu funktionieren
-  
-	Procedures: - netList
-  				- netCofficientRing
-  				- netPrimePower
-  				- netMap
-  				- netMap2 
-  				- netMatrix
-  				- netMatrixShort
-  				- netBigIntMatrix
-  				- netIntMatrix 
-  				- netInt
-  				- netŚtring
-  				- netMatrix3 (two-column poly output) 
-  				- netPoly
-  				- netPolyMatrix (entries for netMatrix3)
-  				- netIdeal
-*/
-
-// globale Variable für die Ausgabenlänge von netIntMat etc.
-
 ///////////////////////////////////////////////////////////////////////////////
 version="$Id$";
 category="Miscellaneous";
@@ -51,6 +28,28 @@ net(def)                general procedure to generate a net from a Singular obje
 catNets(Net,Net)         horizontal concatenation
 stackNets(Net,Net)       vertical concatenation
 printNet
+netList
+netCoefficientRing
+netPrimePower
+netRing
+netMap
+netMap2
+netBigIntMatrix
+netBigIntMatrixShort
+netIntMatrix
+netIntMatrixShort
+netIntVector
+netIntVectorShort
+netMatrix
+netMatrixShort
+netMatrix2
+netInt
+netString
+netVector
+netVectorShort
+netPoly
+netPolyMatrix
+netIdeal
 ";
 
 LIB "matrix.lib";
@@ -66,6 +65,7 @@ proc mod_init()
 	HashTable F = hashTable(list(list("ring"),list("matrix"),list("int"),list("string")),list("netRing","netMatrix","netInt","netString"));
 	Method net_ = method(F);
 	export(net_); 
+	
 	//export for newstructs is broken in Singular at the moment, so net_ is not available outside of the library, however net works
 installMethod(net_,"net");
 }
@@ -206,35 +206,60 @@ return(net(n)+net("^")+net(r));
 
 ////
 proc netRing(def R)
+"USAGE: netMap(f); f map@*
+ASSUME: R is a ring
+RETURN: presentation of R
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netRing; shows an example
+"
 {
  	list RL = ringlist(R);
   	Net N=netCoefficientRing(R)+net("[")+net(string(RL[2]))+net("]");
   	
 return(N);
 }
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+netRing(R);
+}
 
 
 
 ////
 proc netMap( map f)
+"USAGE: netMap(f); f map@*
+ASSUME: f is a map from a ring to the basering
+RETURN: presentation of the map f
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netMap; shows an example
+"
 {
 	list Output;
 	string Map, Source, Target;
 	int i, v, empty;
 	Net M;
 
-	Map=string(nameof(f));
+	Map=string(nameof(f)); // can't get the origninal name of the map
 	Source=string(nameof(preimage(f)));
 	Target=string(nameof(basering));
 
-	Output[1]=Map+": "+Source+" -->I "+Target;
+	Output[1]="Map"+": "+Source+" --> "+Target;
+
+	preimage(f);///// Fehler beim Testlauf
+	nameof(preimage(f));/////
 
 	v=size(ringlist(preimage(f))[2]);
 	
 	empty=size(Output[1]);
 	
 	Output[1]=Output[1]+" , "+string(ringlist(preimage(f))[2][1])+" -> "+string(f[1]);
-
+	
+	v;/////
+	
 	for (i=2; i<=v; i++)
 	{
 		Output[i]=emptyString(empty)+" , "+string(ringlist(preimage(f))[2][i])+" -> "+string(f[i]);
@@ -245,11 +270,26 @@ proc netMap( map f)
 return(M);
 }
 
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+ring r2=103,(a,b,c),lp;
+map f=r1,ab,ac,bc;
+netMap(f);
+}
 
 
 
 ////
 proc netMap2( map f)
+"USAGE: netMap2(f); f map@*
+ASSUME: f is a map from a ring to the basering
+RETURN: presentation of the map f
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netMap; shows an example
+"
 {
 	list Output;
 	string Map, Source, Target;
@@ -277,11 +317,26 @@ proc netMap2( map f)
 	
 return(M);
 }
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+ring r2=103,(a,b,c),lp;
+map f=r1,ab,ac,bc;
+netMap2(f);
+}
 
 
 
 ////
 proc netBigIntMatrix(bigintmat M)
+"USAGE: netBigIntMatrix(M); M bigint Matrix@*
+ASSUME: M is a bigintmatrix
+RETURN: presentation of M
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netBigIntMatrix; shows an example
+"
 { 
 	int Length=5; //Länge der Ausgabe
 	
@@ -333,11 +388,26 @@ proc netBigIntMatrix(bigintmat M)
     
 return(NM);
 }
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+int a=111, b=222, c=333, d=444;
+bigintmatrix M[2][2]=a,b,c,d;
+netBigIntMatrix(M);
+}
 
 
 
 ////
 proc netBigIntMatrixShort(bigintmat M)
+"USAGE: netBigIntMatrixShort(M); M bigint matrix@*
+ASSUME: M is a bigintmatrix
+RETURN: presentation of M, only the first digits of each entry
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netBigIntMatrix; shows an example
+"
 {
  	int Length=5; // Länge der Ausgabe 
  
@@ -428,11 +498,26 @@ proc netBigIntMatrixShort(bigintmat M)
     
 return(NM);
 }
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+int a=1111111111, b=2222222222, c=3333333333, d=4444444444;
+bigintmatrix M[2][2]=a,b,c,d;
+netBigIntMatrixShort(M);
+}
 
 
 
 ////
 proc netIntMatrix(intmat M)
+"USAGE: netIntMatrix(M); M int matrix@*
+ASSUME: M is a int matrix
+RETURN: presentation of M
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netBigIntMatrix; shows an example
+"
 { 
 	
 	int m=nrows(M);
@@ -442,12 +527,27 @@ proc netIntMatrix(intmat M)
 	Net Output=netBigIntMatrix(B);
 	
 	return(Output);
+}
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+int a=1111111111, b=2222222222, c=3333333333, d=4444444444;
+intmat M[2][2]=a,b,c,d;
+netIntMatrix(M);
 }	
 
 
 
 ////
 proc netIntMatrixShort(intmat M)
+"USAGE: netIntMatrix(M); M int matrix@*
+ASSUME: M is a int matrix
+RETURN: presentation of M, only the first digits of each entry
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netIntMatrixShort; shows an example
+"
 { 
 	
 	int m=nrows(M);
@@ -457,13 +557,81 @@ proc netIntMatrixShort(intmat M)
 	Net Output=netBigIntMatrixShort(B);
 	
 	return(Output);
-}	
+}
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+int a=1111111111, b=2222222222, c=3333333333, d=4444444444;
+intmat M[2][2]=a,b,c,d;
+netIntMatrix(M);
+}
 
 
 
 ////
-proc netMatrix(matrix M){ 
-	string S;
+proc netIntVector(intvec V)
+"USAGE: netIntVector(V); V int vector@*
+ASSUME: V is a int vector
+RETURN: presentation of V
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netIntVector; shows an example
+"
+{
+	matrix M=intmat(v);
+	Net Output;
+	Output=netIntMatrix(M);
+return(Output);
+}
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+int a=1111111111, b=2222222222, c=3333333333, d=4444444444;
+intmat V=[a,b,c,d];
+netIntVector(V);
+}
+
+
+
+////
+proc netIntVectorShort(intvec V)
+"USAGE: netIntVectorShort(V); V int vector@*
+ASSUME: V is a int vector
+RETURN: presentation of V, only the first digits of each entry
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netIntVector; shows an example
+"
+{
+	matrix M=intmat(v);
+	Net Output;
+	Output=netIntMatrixShort(M);
+return(Output);
+}
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+int a=1111111111, b=2222222222, c=3333333333, d=4444444444;
+intmat V=[a,b,c,d];
+netIntVectorShort(V);
+}
+
+
+
+////
+proc netMatrix(matrix M)
+"USAGE: netMatrix(V); M matrix@*
+ASSUME: M is a matrix
+RETURN: presentation of M
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netMatrix; shows an example
+"
+{ 
+   string S;
    list L, SizeCol;
    int wd,defect;
    int i,j;
@@ -514,24 +682,66 @@ proc netMatrix(matrix M){
     
 return(NM);
 }
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+poly a=2x3y4, b=2x3y4z, c=x3y4z5, d=5x6y7z10, e=2x3y, f=4y5z8;
+matrix M[2][3]=a,b,c,d,e,f;
+netMatrix(M);
+}
 
 
 
 ////
 proc netMatrixShort(matrix M)
+"USAGE: netMatrixShort(V); M matrix@*
+ASSUME: M is a matrix
+RETURN: presentation of M
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netMatrixShort; shows an example
+"
 { 
-	string S;
-   list L, SizeCol;
+   int maxBreite=10;
+   string S;
+   list Output, List, Rows, Cols, SizeCol, Length;
    int wd,defect;
-   int i,j;
+   int i, j, Space;
+   poly Entry, Lead;
+   poly Zero;
+ 
+ 	//
+ 	for( i=1; i<=nrows(M); i++) //List ist leer und wird benutzt um die Struktur aufzubauen
+		{
+		Rows[i]=List;
+		}  
+		
+	//
+	for(i=1; i<=nrows(M); i++)
+	{
+		for( j=1; j<=ncols(M); j++)
+		{
+			Rows[i][j]="";
+		}
+	}
+		
+ 
+ 	//
+   for (j=1; j<=ncols(M); j++)
+	{
+		Length[j]=0;
+	}
    
- //
+   
+ 	//
    for (j=1; j<=ncols(M); j++)
 	{
 		SizeCol[j]=0;
 	}
 
-//
+
+	//
 	for (j=1; j<=ncols(M); j++)
 	{
 		for (i=1; i<=nrows(M) ; i++)
@@ -542,66 +752,118 @@ proc netMatrixShort(matrix M)
 			}
 		}
 	}
+
 	
-// 
-    for ( i=1; i<=nrows(M); i++ )
-    {
-    	for ( j=1; j<=ncols(M); j++ )
-    	{
-    		if ( j!=1 )
-    		{
-    		S=S+" ";
-    		}
+	//
+	for (j=1; j<=ncols(M); j++)
+	{
+		for (i=1; i<=nrows(M) ; i++)
+		{
+			if(SizeCol[j]>size(string(lead(M[i,j]))))
+			{
+			 SizeCol[j]=maxBreite;
+			}
+		}
+	}
+	
+	
+	// 
+   for ( i=1; i<=nrows(M); i++ )
+   	{
+    		for ( j=1; j<=ncols(M); j++ )
+    			{
+    				//
+    				if ( j!=1 ) // nicht erste Zeile, dann Leerzeichen zur Abgrenzung zum letzten Eintrag
+    					{
+    						Rows[i][j]=Rows[i][j]+" ";
+    					}
     		
-    		defect=SizeCol[j]-size(string(M[i,j]));
-    		S=S+string(lead(M[i,j]))+"+..."+emptyString(defect);
-      }
-      L[i]=S;
-      S="";
-    }
+    				Space=SizeCol[j];  //maximal verfügbare Breite
+    				Entry=M[i,j];
+    		 			
+    				while( Space >= size (string (lead (Entry) ) ) && Entry != Zero )
+    					{
+    						Rows[i][j]=Rows[i][j]+string( lead( Entry ) );
+							  				
+    						if( Entry-lead(Entry) != 0 )
+    							{
+    								Rows[i][j]=Rows[i][j]+"+";
+    							}
+    				
+			    				Space=Space-size(string( lead( Entry ) ) );
+    							Entry=Entry-lead(Entry);
+    					}
+    					
+    				if( Entry != Zero )
+    					{
+    					Rows[i][j]=Rows[i][j]+"...";
+    					}
+    			
+    				else	// sind alle terme gesetzt wird der String nicht weiter bearbeitet
+    				{
+    				}
+    		
+    				if( Length[j] < size(Rows[i][j]) )
+    				{
+    					Length[j]=size(Rows[i][j]); // Länge der Einträge erfassen
+
+    				} 				
+  			}
+		}
     
-//      
-    for (j=1; j<=nrows(M); j++)
-    {
-       L[j]="| "+L[j]+" |";
-    }
+    //
+    for (i=1; i<=nrows(M); i++)
+		{
+			for (j=1; j<=ncols(M) ; j++)
+			{
+				defect=Length[j]-size(Rows[i][j] );
+				Rows[i][j]=Rows[i][j]+emptyString(defect);
+			}
+		}
+			    
+	//		      
+	for (i=1; i<=nrows(M); i++) // Einträge zusammenfassen
+		
+		{	
+			Output[i]="| ";
+		
+			for (j=1; j<=ncols(M) ; j++)
+			{
+				Output[i]=Output[i]+Rows[i][j];
+			}
+		
+			Output[i]=Output[i]+" |";		
+		}
     
     Net NM;
-    NM.rows=L;
+    NM.rows=Output;
     
 return(NM);
 }
-
-
-////
-proc netInt(int M)
+example
 {
-  Net N;
-  list L;
-  L[1]=string(M);
-  N.rows=L;
-return(N);
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+poly a=2x3y4, b=2x3y4z, c=x3y4z5, d=5x6y7z10, e=2x3y, f=4y5z8;
+matrix M[2][3]=a,b,c,d,e,f;
+netMatrixShort(M);
 }
 
 
-
+/*
 ////
-proc netString(string M)
-{
-  Net N;
-  list L;
-  L[1]=M;
-  N.rows=L;
-return(N);
-}
-
-
-////
-proc netMatrix3(matrix M) // Matrixausgabe mit 2-Zeilen Polynomausgabe
+proc netMatrix2(matrix M) // Matrixausgabe mit 2-Zeilen Polynomausgabe
+"USAGE: netMatrix2(M); M string@*
+ASSUME: M is a matrix
+RETURN: presentation of M
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netMatrix2; shows an example
+"
 { 
-list Output, SizeCol;
-string S; // zum Füllen der Liste Output
-int i,j,k,defect;
+	list Output, SizeCol;
+	string S; // zum Füllen der Liste Output
+	int i,j,k,defect;
 
 	// 1 // Liste 'SizeCol' mit Nullen füllen
 	
@@ -610,85 +872,198 @@ int i,j,k,defect;
 		SizeCol[j]=0;
 	}
     
-    // 2 // Abfrage der Spaltenbreite
+   	// 2 // Abfrage der Spaltenbreite
     
-    for(j=1; j<=ncols(M); j++)
-    {
-    	for(i=1; i<=nrows(M); i++)
-    	{
-    		if(SizeCol[j]<=size(netPolyMatrix(M[i,j])[2]))
-    		{
-    			SizeCol[j]=size(netPolyMatrix(M[i,j])[2]);
-    		}
-    	}
+   	for(j=1; j<=ncols(M); j++)
+   	{
+   	 	for(i=1; i<=nrows(M); i++)
+   	 	{
+   	 		if(SizeCol[j]<=size(netPolyMatrix(M[i,j])[2]))
+   	 		{
+   				SizeCol[j]=size(netPolyMatrix(M[i,j])[2]);
+   	 		}
+   	 	}
     }
 
     // 3 // Erstellung der Matrixzeilen		
     		
     for(k=1; k<=(2*nrows(M)); k++) //Erstellung von von 2*nrows(M) Zeilen
     {
-
     	i=(k+1) div 2; //Klammerung beachten
     	
-		if(k mod 2==1) // ungerade=obere Zeile wird gesetzt
+		if(k mod 2==1 ) // ungerade=obere Zeile wird gesetzt
      	{
-     		S=" |";
-     		Output[k]=S;
+     		Output[k]="| ";
 
      		for(j=1; j<=ncols(M); j++)
      		{
-     			if(j!=1)
+     			if(j != 1)
      			{
      				defect=SizeCol[j]-size(netPolyMatrix(M[i,j])[1]);
-     				S=" "+Output[k]+netPolyMatrix(M[i,j])[1]+emptyString(defect);
-     				Output[k]=S;
+					S=string(netPolyMatrix(M[i,j])[1]);
+     				Output[k]=Output[k]+" "+Output[k]+netPolyMatrix(M[i,j])[1]+emptyString(defect);
     			}
     			else
      			{
      				defect=SizeCol[j]-size(netPolyMatrix(M[i,j])[1]);
-     				S=Output[k]+netPolyMatrix(M[i,j])[1]+emptyString(defect);
-     				Output[k]=S;
+					S=string(netPolyMatrix(M[i,j])[1]);
+     				Output[k]=Output[k]+Output[k]+netPolyMatrix(M[i,j])[1]+emptyString(defect);
     			}
     		}
     	}
-    	
-    
-    	
-    	if(k mod 2==0) // gerade=untere Zeile wird gesetzt
+	
+		else // gerade=untere Zeile wird gesetzt
      	{
-     		S=string(i)+"|";
-     		Output[k]=S;
+     		Output[k]="| ;
      		
      		for(j=1; j<=ncols(M); j++)
      		{
-				if(j!=1)
-				{
-     				defect=SizeCol[j]-size(netPolyMatrix(M[i,j])[2]);
-     				S=" "+Output[k]+netPolyMatrix(M[i,j])[2]+emptyString(defect);
-     				Output[k]=S;
-     			}
-     			else
-     			{
-     				defect=SizeCol[j]-size(netPolyMatrix(M[i,j])[2]);
-     				S=Output[k]+netPolyMatrix(M[i,j])[2]+emptyString(defect);
-     				Output[k]=S;
-     			}
+				if(j != 1)
+     				{
+     			 		defect=SizeCol[j]-size(netPolyMatrix(M[i,j])[2]);
+						S=string(netPolyMatrix(M[i,j])[2]);
+     					Output[k]=Output[k]+" "+Output[k]+netPolyMatrix(M[i,j])[2]+emptyString(defect);
+    				}
+    			else
+     				{
+     					defect=SizeCol[j]-size(netPolyMatrix(M[i,j])[2]);
+						S=string(netPolyMatrix(M[i,j])[2]);
+     					Output[k]=Output[k]+Output[k]+netPolyMatrix(M[i,j])[2]+emptyString(defect);
+    				}
     		}
     	}
     	
-    	S=Output[k]+"|";
-    	Output[k]=S;
+    	Output[k]=Output[k]+"|";
     }
     	
     Net NM;
     NM.rows=Output;
 return(NM);
 }
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+poly a=2x3y4, b=2x3y4z, c=x3y4z5, d=5x6y7z10, e=2x3y, f=4y5z8;
+matrix M[2][3]=a,b,c,d,e,f;
+netMatrix2(M);
+}
+*/
+
+
+
+////
+proc netInt(int M)
+"USAGE: netInt(M); M integer@*
+ASSUME: M is an integer
+RETURN: presentation of M
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netMatrixShort; shows an example
+"
+{
+  Net N;
+  list L;
+  L[1]=string(M);
+  N.rows=L;
+return(N);
+}
+example
+{
+"EXAMPLE:";
+ring r;
+int M=5;
+netInt(M);
+}
+
+
+
+////
+proc netString(string M)
+"USAGE: netString(M); M string@*
+ASSUME: M is a string
+RETURN: presentation of M
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netString; shows an example
+"
+{
+  Net N;
+  list L;
+  L[1]=M;
+  N.rows=L;
+return(N);
+}
+example
+{
+"EXAMPLE:";
+string M="Hallo";
+netString(M);
+}
+
+
+
+////
+proc netVector(vector V)
+"USAGE: netVector(V); V vector@*
+ASSUME: V is a vector
+RETURN: presentation of V
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netVector; shows an example
+"
+{
+	matrix M=matrix(v);
+	Net Output;
+	Output=netMatrix(M);
+return(Output);
+}
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+poly a=2x3y4, b=2x3y4z, c=x3y4z5, d=5x6y7z10, e=2x3y, f=4y5z8;
+vector V=[a,b,c,d,e,f]
+netVector(V);
+}
+
+
+
+////
+proc netVectorShort(vector V)
+"USAGE: netVectorShort(V); V vector@*
+ASSUME: V is a vector
+RETURN: presentation of V
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netVector; shows an example
+"
+{
+	matrix M=matrix(v);
+	Net Output;
+	Output=netMatrixShort(M);
+return(Output);
+}
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+poly a=2x3y4, b=2x3y4z, c=x3y4z5, d=5x6y7z10, e=2x3y, f=4y5z8;
+vector V=[a,b,c,d,e,f]
+netVectorShort(V);
+}
 
 
 
 ////
 proc netPoly(poly P)
+"USAGE: netPoly(P); P poly@*
+ASSUME: P is a poly
+RETURN: presentation of P over two rows
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netPoly; shows an example
+"
 {
 	poly Lead;
 	list Output;
@@ -828,117 +1203,181 @@ proc netPoly(poly P)
 
 return(N);
 }
-
-
-
-////
-proc netPolyMatrix(poly M)
+example
 {
-	string Up, Down; //getrennte Strings für die Ausgabe der beiden Zeilen
-
- 	if (M==0) 
- 	{
- 		Down="0";
- 	}
-
- 	else 
- 	{
-
- /*getrennte Strings für die Ausgabe der beiden Zeilen*/
-		int s,i;
-
- 		while(M!=0)
- 		{
-			if(Down=="")
-			{ //Erstes Zeichen wir in den String geschrieben
-				if(leadcoef(M)==1 || leadcoef(M)==-1)
-				{
-					if(leadcoef(M)==1)
-					{
-					}
-					
-					else
-					{
-						Down=Down+"-"; 
-						Up=Up+emptyString(1);
-					}
-				}
-		
-			else
-			{
-				Down=Down+string(leadcoef(M)); // ganzer Koeffizient wird gesetzt
-				Up=Up+emptyString(size(string(leadcoef(M))));
-			}
-		}
-	
-		else
-		{
-			if(leadcoef(M)<=0) //Negatives Vorzeichen setzen
-			{ 
-				if (leadcoef(M)==-1)
-				{
-					Down=Down+"-";
-					Up=Up+emptyString(1);
-				}		
-				
-				else
-				{
-					Down=Down+string(leadcoef(M));
-					Up=Up+emptyString(size(string(leadcoef(M))));
-				}
-			}
-		
-			else{ //Bei positivem Koeffizienten muss die Verknüpfung gesetzt werden
-				Down=Down+"+";
-				Up=Up+emptyString(1);
-			
-				if(leadcoef(M)!=1)
-				{
-					Down=Down+"+"+string(leadcoef(M));
-					Up=Up+emptyString(size(string(leadcoef(M)))+1);
-				}
-			}
-		}
-
-	
-		if (leadexp(M)!=0) //treten Variablen in lead(M) auf 
-		{
-			for(i=1; i<=size(leadexp(M)); i++)
-			{
-				if(((ringlist(basering))[2])[i]!=0) // tritt die variable in lead
-				{ 
-					if(((ringlist(basering))[2])[i]==1) // Variable tritt in erster Potenz auf
-					{ 
-						Down=Down+string(((ringlist(basering))[2])[i]); /*Variale werden aus der Ringliste geladen*/
-						Up=Up+emptyString(size(string(((ringlist(basering))[2])[i])));
-					}
-					else
-					{
-						Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
-						Up=Up+emptyString(size(string(((ringlist(basering))[2])[i]))); /* +1 für "*" */
-				
-						Up=Up+string((leadexp(M))[i]); /* Der zugehörige Exponent wird hinzugefügt*/
-					
-						Down=Down+emptyString(size(string((leadexp(M))[i])));
-					}
-				}
-			}
-		}
-		
-		M=M-lead(M);
- 		}
-	}
-
-	list Output=Up,Down;
-
- return(Output);
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+poly P=2x3y4+2x3y4z+x3y4z5-5x6y7z10-2x3y+4y5z8;
+netPoly(P);
 }
 
 
 
 ////
-proc netIdeal(ideal I){
+proc netPolyMatrix(poly P)
+"USAGE: netPolyMatrix(P); P poly@*
+ASSUME: P is a poly
+RETURN: input for the procedure netMatrix2
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netPolyMatrix; shows an example
+"
+{
+	poly Lead;
+	list Output;
+	string Up, Down, Control; //getrennte Strings für die Ausgabe der beiden Zeilen
+	int s,i;
+	int v=-1;
+	number Zero=0; // um bei den Vergleichen kompatibel zu machen
+	number One=1;
 
+//
+	if (P==0) 
+	{
+		Down="0";
+	}
+
+//
+	else 
+		{
+		while(P!=0)
+		{	
+			Control=Down;
+		
+			if ( Control == "" ) 
+			{ 
+				if( leadcoef(P) == One || leadcoef(P) == -One )
+					{
+						if ( leadexp(P) == 0 )
+						{
+							if ( leadcoef(P) == One )
+							{
+								Down=Down+"1"; 
+								Up=Up+emptyString(1);
+							}
+							
+							else
+							{
+								Down=Down+"-1"; 
+								Up=Up+emptyString(2);
+							}
+						}
+						
+						else
+						{
+							if ( leadcoef(P) == One )
+								{
+								}	
+							else
+							{
+								Down=Down+"-"; 
+								Up=Up+emptyString(1);
+							}
+						}
+					}
+				
+				else
+				{
+					Down=Down+string(leadcoef(P)); // ganzer Koeffizient wird gesetzt
+					Up=Up+emptyString(size(string(leadcoef(P))));
+				}
+			}
+	
+			if ( Control != "" ) 
+			{
+		
+				Lead=leadcoef(P);
+		
+				if( Lead < Zero  ) // Negatives Vorzeichen setzen, Bedingung falsch -> Wahrheitswert 1
+				{
+					if ( Lead == -One ) // number == int ->richtige Wahrheitswerte
+					{
+				
+						if (  leadexp(P) == 0 )
+						{
+							Down=Down+"-1";
+							Up=Up+emptyString(2);
+						}
+					
+						else
+						{
+							Down=Down+"-";
+							Up=Up+emptyString(1);
+						}
+					}
+						
+					else
+					{
+						Down=Down+string(leadcoef(P));
+						Up=Up+emptyString(size(string(leadcoef(P))));
+					}
+				
+				}
+		
+				else // Bei positivem Koeffizienten muss die Verknüpfung gesetzt werden
+				{ 
+					Down=Down+"+";
+					Up=Up+emptyString(1);
+			
+					if( Lead != One )
+					{				
+						Down=Down+string(leadcoef(P));
+						Up=Up+emptyString(size(string(leadcoef(P))));
+					}
+				}
+			}
+
+	
+			if ( leadexp(P) != 0 ) 
+			{		
+				for(i=1; i<=size(leadexp(P)); i++)
+				{
+					if((leadexp(P)[i])!=0)
+					{
+						if(leadexp(P)[i]==1)
+						{
+							Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
+							Up=Up+emptyString(size(string(((ringlist(basering))[2])[i])));
+						}
+						else
+						{
+						Down=Down+string(((ringlist(basering))[2])[i]); /*Varialen werden aus der Ringliste geladen*/
+						Up=Up+emptyString(size(string(((ringlist(basering))[2])[i]))); /* +1 für "*" */
+				
+						Up=Up+string((leadexp(P))[i]); /* Der zugehörige Exponent wird hinzugefügt*/
+						Down=Down+emptyString(size(string((leadexp(P))[i])));
+						}
+					}
+				}
+			}
+	
+		P=P-lead(P);
+		}
+	}
+	Output=Up,Down;
+
+return(Output);
+}
+example
+{
+"EXAMPLE:";
+ring r1=101,(x,y,z),lp;
+poly P=2x3y4+2x3y4z+x3y4z5-5x6y7z10-2x3y+4y5z8;
+netPolyMatrix(P);
+}
+
+
+
+////
+proc netIdeal(ideal I)
+"USAGE: netPolyMatrix(P); P poly@*
+ASSUME: P is a poly
+RETURN: presentation of I
+THEORY:
+KEYWORDS: Output
+EXAMPLE: examplpe netIdeal; shows an example
+"
+{
  Net N=net("<");
  for (int i=1; i<size(I); i++)
  {
@@ -946,6 +1385,13 @@ proc netIdeal(ideal I){
  }
  N=N+net(I[size(I)])+net(">");
  return(N);
+}
+example
+{
+"EXAMPLE:";
+ring r;
+ideal I=2x3y4,2x3y4z+x3y4z5,5x6y7z10-2x3y+4y5z8;
+netIdeal(I);
 }
 
 
