@@ -56,14 +56,18 @@ proc mathmlMatrix(matrix m){
 return(s);
 }
 
-proc mathmlInt(matrix m){}
+proc mathmlInt(int m){
+ return("<mn>"+string(m)+"</mn>");}
 
-proc mathmlString(matrix m){}
+proc mathmlString(string m){
+ return(m);}
 
-proc LeadCoef(string s) {
+proc mathmlLeadCoef(string s) {
 string t;
 int i=1;
 int u=0;
+if (s=="1"){return(t);}
+if (s=="-1"){return("<mo>-</mo>");}
  while (i<size(s)) {
    if (s[i]=="/")  {u=1;
                     i=size(s);} 
@@ -82,159 +86,142 @@ if (u==1) {
     }
    t=t+"</mn> </mfrac>";
   }
-if (u==0) {t="<mn>"+s+"</mn>";}
+if (u==0) {
+  if (s[1]=="-") {t=t+"<mo>-</mo>";s=s[2,size(s)-1];}
+  t=t+"<mn>"+s+"</mn>";}
 return(t);
-} 
+}  
 
-proc Sort(string s,string z){
+proc mathmlHilfEncoding(string s)  {
 string g;
-string z2=z+",;";
- while (z2!=";") {
-  if (find(s,z2[1,find(z2,",")-1])!=0) {
-   g=g+z2[1,find(z2,",")];
-   }
- z2=z2[find(z2,",")+1,size(z2)-find(z2,",")];
-}
-g=g[1,size(g)-1];
-return(g);
-}      
-
-proc mathmlMonomial(string s,string z){
- string g;
- string t=Sort(s,z)+",;,";
- string s2=s+";"; 
- string v=t[1,find(t,",")-1];
- string v2;
- while (v!=";") {
-  g=g+"<msup><mi>"+v+"</mi>";
-  t=t[size(v)+2,size(t)-size(v)-1];
-  v2=t[1,find(t,",")-1];
-  g=g+"<mn>"+s2[size(v)+1,find(s2,v2)-size(v)-1]+"</mn></msup>";
-  s2=s2[find(s2,v2),size(s2)-find(s2,v2)+1];
-  v=v2;
-  }
-return(g);
-}
-
-proc mathmldelete(string z,string a) {
- string g=z+";";
- while (find(g,a)!=0) {
-  g=g[1,find(g,a)-1]+g[find(g,a)+1,size(g)-find(g,a)];
-  }
+string h=s+")";
+while (h!=")") {
+ g=g+h[2,find(h,")")-2]+",";
+ h=h[find(h,")")+1,size(h)-find(h,")")];
+ }
  g=g[1,size(g)-1];
+return(g);
+}
+
+proc mathmlVariablesEncoding(string s)  {
+string g;
+ if (s[size(s)]==")") {
+ g="<msub><mi>"+s[1,find(s,"(")-1]+"</mi><mn>"+mathmlHilfEncoding(s[find(s,"("),size(s)-find(s,"(")+1])+"</mn></msub>";
+ }
+ 
+else {g="<mi>"+s+"</mi>";}
+return(g);
+}
+
+proc mathmlMonomial(poly a) {
+string g;
+intvec d=leadexp(a);
+list e;
+for(int q=1;q<=size(variables(a));q++)  {
+e[q]=variables(a)[q];
+}
+int k=1;
+for(int i=1;i<=size(d);i++)  {
+  if (d[i]>0) {
+  g=g+"<msup><mrow>"+mathmlVariablesEncoding(string(e[k]))+"</mrow><mn>";
+  if (d[i]>1) {g=g+string(d[i]);}
+  g=g+"</mn></msup>";
+  k=k+1;}
+  }   
+return(g);
+}
+
+proc mathmlHilf(poly a,def r) {
+string g;
+poly d=a;
+list l1=ringlist(r);
+list l12=ringlist(r);
+  for(int i=1;i<=size(l12[1][2]);i++) {
+   l12[2][i]=l12[1][2][i]+"1";
+   l12[1][2][i]=l12[1][2][i]+"0";
+   }
+  def w=ring(l12);
+  setring(w);
+ poly f=fetch(r,d);
+ list l12=ringlist(basering);
+  for (i=1;i<=size(l12[1][2]);i++) {
+   f=subst(f,par(i),var(i));
+   }
+  while (size(l12[2])>size(l12[1][2])) {
+   l12[2]=delete(l12[2],size(l12[1][2])+1);
+   }
+  for (i=1;i<=size(l12[2]);i++) {
+   l12[2][i]=l12[2][i][1,size(l12[2][i])-1];
+   }
+ l12[1]=l12[1][1];
+ def w2=ring(l12);
+ setring(w2);
+ poly f=fetch(w,f);
+ g=g+mathmlPoly(f,w2);
  return(g);
 }
+ 
 
-
-
-proc mathmlTransform(string z,string t1,string t2) {
-string g=z+";";
- while (find(g,t1)!=0) {
-  g=g[1,find(g,t1)-1]+t2+g[find(g,t1)+size(t1),size(g)-find(g,t1)-size(t1)+1];
- }
-return(g);
-}
-
-proc mathprob (poly a,def r){
-poly d=leadcoef(a);
-list l12=ringlist(basering);
-for(int i=1;i<=size(l12[1][2]);i++) {
-l12[2][i]=l12[1][2][i]+"1";
-l12[1][2][i]=l12[1][2][i]+"0";
-}
-def w=ring(l12);
-setring(w);
-keepring w;
-poly f=fetch(r,d);
-print(basering);
-list l12=ringlist(basering);
-for (i=1;i<=size(l12[1][2]);i++) {
-f=subst(f,par(i),var(i));
-}
-while (size(l12[2])>size(l12[1][2])) {
- l12[2]=delete(l12[2],size(l12[1][2])+1);
- }
-for (i=1;i<=size(l12[2]);i++) {
-l12[2][i]=l12[2][i][1,size(l12[2][i])-1];
- }
-l12[1]=ringlist(r)[1][1];
-print(l12);
-def w2=ring(l12);
-keepring w2;
-poly f=fetch(w,f);
-return(f);
-}
-
-proc mathmlPoly(string s,string z){
+proc mathmlPoly(poly a,def r){
 string g;
-string s2=s;
-string z2;
-string s1=s+";";
-int v;
-while (s1!=";") {
-if (s1[1]=="+") {g=g+"<mo>+</mo>";s1=s1[2,size(s1)-1];}
-if (s1[1]=="-") {g=g+"<mo>-</mo>";s1=s1[2,size(s1)-1];}
-v=size(s1);
-if (find(s1,"+")>0) {v=find(s1,"+");}
-if (find(s1,"-")>0 && find(s1,"-")<v) {v=find(s1,"-");}
-s2=s1[1,v-1];
-z2=Sort(s2,z);
-g=g+LeadCoef(s2[1,find(s2,z2[1])-1]);
-g=g+mathmlMonomial(s2[find(s2,z2[1]),size(s2)-find(s2,z2[1])+1],z2);
-s1=s1[find(s1,s2)+size(s2),size(s1)-find(s1,s2)-size(s2)+1];
-}
+number d=leadcoef(a);
+list l12=ringlist(r);
+int z=(typeof(l12[1])=="list");
+ if (z==1) {if (d!=1) {
+              if (denominator(d)==1) {g=g+"<mi>(</mi>"+mathmlHilf(d,r)+"<mi>)</mi>";}
+              else {g=g+"<mfrac><mrow>"+mathmlHilf(numerator(d),r)+"</mrow><mrow>"+mathmlHilf(denominator(d),r)+"</mrow></mfrac>";}
+            }
+          }
+else {
+ g=g+mathmlLeadCoef(string(leadcoef(a)));
+ }
+setring(r);
+ if (a==1) {g=g+"<mn>1</mn>";}
+ if (a==-1){g=g+"<mn>-1</mn>";}
+g=g+mathmlMonomial(leadmonom(a));
+a=a-lead(a);
+if (a!=0) {
+ if (z==0) {if (poly(leadcoef(a))>0) {g=g+"<mo>+</mo>";}}
+ else      {g=g+"<mo>+</mo>";}
+  g=g+mathmlPoly(a,r);
+ } 
 return(g);
 }
 
-proc mathmlPolynom(poly m,def r) {
-string g="<math xmlns=http://www.w3.org/1998/Math/MathML>";ring r2=0,x,lp;
-poly d=m; 
-string d1; 
-int h; 
- while (d!=0) {
-  d1=mathmldelete(string(d),"*");
-  h=size(string(leadcoef(d)))-find(string(d),")");
-  if (d1[1]=="(") {
-   if (h>0) {g=g+"<mfrac><mrow>";}
-   else     {g=g+"<mo>(</mo>";}
-   g=g+mathmlPoly(d1[2,find(d1,")")-2],string(ringlist(r)[1][2]));
-  if (h>0) {g=g+"</mrow><mn>"+d1[find(d1,")")+2,h-1]+"</mn></mfrac>";}
-  else     {g=g+"<mo>)</mo>";}
-  }
-  else { 
-   g=g+LeadCoef(string(leadcoef(d)));}
-  g=g+mathmlMonomial(string(leadmonom(d)),string(variables(d)));
- d=d-lead(d);
- if (d!=0 && string(leadcoef(d))[1]!="-") {
-   g=g+"<mo>+</mo>";
-  }
- }
+proc mathmlPolynom(poly d)  {
+string g="<math xmlns=http://www.w3.org/1998/Math/MathML>";
+g=g+mathmlPoly(d,basering);
 return(g);
 }
 
 
 proc mathmlRing(def r){
-int i=0;
-string t;
-string s="<math xmlns=http://www.w3.org/1998/Math/MathML>";
- if (string(r)[2]=="0") {
-  s=s+"<mi> Q";
+string g="<math xmlns=http://www.w3.org/1998/Math/MathML>";
+list l12=ringlist(r);
+if (l12[1][1]==0) {g="<mi><mn>&rationals;</mn></mi>";}
+else {g="<msub><mn>&integers;</mn><mn>"+string(l12[1][1])+"</mn></msub>";}
+if (typeof(l12[1])=="list") {
+ g=g+"<mi>[</mi>";
+ for(int i=1;i<=size(l12[1][2]);i++) {
+   g=g+mathmlVariablesEncoding(string(l12[1][2][i]))+"<mo>,</mo>";
   }
-  if (string(r)[2]!="0") {
-   t=string(r)[2,find(string(r),",")-2];
-   s=s+"<msub><mi>Z</mi><mn>"+t+"</mn></msub>";
+ g=g[1,size(g)-10]; 
+ g=g+"<mo>]</mo>";
+ if (l12[1][4]!=0) {
+   list l1=l12;
+   l1[1][4]=ideal(0);
+   def w=ring(l1);
+   setring(w);
+   list l12=fetch(r,l12);
+   g=g+"<mo>/</mo>"+mathmlPoly(l12[1][4][1],w);
   }
- if (find(string(r),")")>find(string(r),","))  {
-  t=string(r)[find(string(r),",")+1,size(string(r))];
-  t=t[1,find(t,")")-1];
-  s=s+"["+t+"]";
-  s=s+"/"+string(ringlist(r)[1][4])+" ";
  }
-  t=string(r)[find(string(r),")")+3,size(string(r))];
-  s=s+"["+t[1,find(t,")")-1];
-  s=s+"] </mi>";
-s=s+"</math>";
-return(s);
-}
-
+ g=g+"<mi>[</mi>";
+ for(int i=1;i<=size(l12[2]);i++) {
+   g=g+mathmlVariablesEncoding(string(l12[2][i]))+"<mo>,</mo>";
+  }
+ g=g[1,size(g)-10]; 
+ g=g+"<mo>]</mo>";
+return(g)
+;}
 // usw
